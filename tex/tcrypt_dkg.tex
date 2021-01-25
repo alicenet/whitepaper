@@ -1,0 +1,199 @@
+\subsection{Distributed Key Generation Protocol}
+\label{ssec:dkg}
+
+We desire a Byzantine Fault Tolerant consensus algorithm.
+So, we let $\mathcal{P}$ be the total collection of participants with
+$\abs{\mathcal{P}} = n$.
+We set the threshold $t = \ceil{2n/3} - 1$ in our $\parens{t,n}$
+secret sharing protocol.
+Thus, it takes $t+1$ users to reconstruct a secret, which corresponds
+to strictly greater than two-thirds of the participants.
+We assume there is an open broadcast channel between all participants.
+Encryption will be provided through Diffie-Hellman style shared
+secret encryption; this will be discussed in Sec.~\ref{ssec:secret_enc}.
+The group shared secret, henceforth called the \emph{master secret key},
+will be the sum of the shared secrets of
+each group member who correctly shared his secret.
+Once there are $t+1$ valid partial signatures, these will be
+combined to form a group signature.
+
+As stated above, although the final master public key will
+reside in $\G_{2}$, because the precompiled contracts
+currently available in the Ethereum Virtual Machine only allow addition
+and scalar multiplication in $\G_{1}$ (multiplication and exponentiation
+in our multiplicative notation), we will primarily
+use computations in $\G_{1}$ and anything required
+in $\G_{2}$ will be confirmed via a \textsc{PairingCheck} call.
+
+\subsubsection{Participant Setup}
+Each participant $P_{i}\in\mathcal{P}$ begins by selecting
+a secret key $\sk_{i}\in\Z_{q}$ with public key $\pk_{i} = g_{1}^{\sk_{i}}$.
+The public-private key pair $\angles{\pk_{i},\sk_{i}}$ will be
+used for secure communication over the insecure broadcast channel;
+it will not be used for signing any messages.
+
+\subsubsection{Verifiable Secret Sharing}
+
+Participant $P_{i}$ chooses a secret
+$s_{i}\in\Z_{q}$ to share with the other participants.
+To do this, choose a secret polynomial $f_{i}:\Z_{q}\to\Z_{q}$
+with
+
+\begin{equation}
+    f_{i}(x) = c_{i0} + c_{i1}x + c_{i2}x^{2} + \cdots + c_{it}x^{t},
+\end{equation}
+
+\noindent
+where $c_{i0} = s_{i}, c_{i1}, \cdots, c_{it}$ are chosen uniformly
+in $\Z_{q}$.
+Setting
+
+\begin{equation}
+    C_{ik} = g_{1}^{c_{ik}}\quad k\in\braces{0,\cdots,t},
+\end{equation}
+
+\noindent
+we have the corresponding public polynomial $F_{i}:\Z_{q}\to\G_{1}$:
+
+\begin{equation}
+    F_{i}(x) = C_{i0}C_{i1}^{x}\cdots C_{it}^{x^{t}}.
+\end{equation}
+
+\noindent
+The shared secret from $P_{i}$ to $P_{j}$ is $s_{i\to j} = f_{i}(j)$
+and
+
+\begin{equation}
+    \overline{\texttt{s}}_{i\to j} =
+        \textsc{Encrypt}(\text{sk}_{i},\text{pk}_{j},j, s_{i\to j})
+\end{equation}
+
+\noindent
+refers to a particular encryption scheme we discuss
+in Sec.~\ref{ssec:secret_enc}.
+Participant $P_{i}$ will broadcast the message
+
+\begin{equation}
+    \left\{ 
+        \overline{\texttt{s}}_{i\to 1}, \overline{\texttt{s}}_{i\to 2},
+            \cdots,
+            \overline{\texttt{s}}_{i\to i-1},
+            \overline{\texttt{s}}_{i\to i+1},
+            \cdots,
+            \overline{\texttt{s}}_{i\to n},
+        C_{i0}, C_{i1}, \cdots, C_{it}
+    \right\}
+\end{equation}
+
+\noindent
+over the broadcast channel.
+We note this message does not include the secret
+$\overline{\texttt{s}}_{i\to i}$.
+
+Once participant $P_{j}$ receives the message from $P_{i}$,
+he sets
+
+\begin{equation}
+    \hat{s}_{i\to j} = \textsc{Decrypt}(\text{sk}_{j},\text{pk}_{i}, j,
+        \overline{\texttt{s}}_{i\to j}).
+\end{equation}
+
+\noindent
+$P_{j}$ then determines if
+
+\begin{equation}
+    g_{1}^{\hat{s}_{i\to j}} \overset{?}{=} F_{i}(j).
+    \label{eq:secret_share_test}
+\end{equation}
+
+\noindent
+If we have equality, then $\hat{s}_{i\to j} = s_{i\to j}$.
+Otherwise, $P_{i}$ incorrectly shared his secret.
+
+
+
+\subsubsection{Malicious shares}
+
+We now suppose that $\overline{\texttt{s}}_{i\to j}$ is incorrect;
+that is, we do not have equality in Eq.~\eqref{eq:secret_share_test}.
+In order to prove this to be the case, everyone needs to be
+able to prove that the encrypted secret
+$\overline{\texttt{s}}_{i\to j}$ is incorrect.
+To do this, $P_{j}$ must publish and prove the shared secret $k_{ij}$;
+this is required in order to ensure bad actors
+do not submit false proofs against honest actors.
+
+Proving $k_{ij}$ is the shared secret is based on showing
+
+\begin{equation}
+    \pk_{j} = g_{1}^{\sk_{j}} \quad\text{and}\quad
+    k_{ij} = \pk_{i}^{\sk_{j}}
+\end{equation}
+
+\noindent
+\emph{without} sharing the secret key $\sk_{j}$;
+that is, we wish to show
+$\dlog_{g_{1}}(\pk_{j}) = \dlog_{\pk_{i}}(k_{ij})$
+while keeping their common value ($P_{j}$'s secret key $\sk_{j}$) secret.
+To do this, we use a zero-knowledge proof;
+see Alg.~\ref{alg:zk_dleq_proof} for constructing the zk-proof
+and Alg.~\ref{alg:zk_dleq_verify} for proof verification.
+One reference for zk-proofs involving discrete logarithms
+is~\cite{camenisch1997proof}.
+
+Thus, $P_{j}$ would compute
+
+\begin{equation}
+    \pi(k_{ij}') = \textsc{DLEQ}(g_{1},\pk_{j},\pk_{i},k_{ij}',\sk_{j})
+\end{equation}
+
+\noindent
+and publish $\angles{k_{ij}',\pi(k_{ij}')}$, where $k_{ij}'$
+is claimed shared secret.
+This allows anyone to use \textsc{DLEQ-verify} to determine
+its validity.
+If
+
+\begin{equation}
+    \textsc{DLEQ-verify}(g_{1},\pk_{j},\pk_{i},k_{ij}',\pi(k_{ij}'))
+        = \texttt{true},
+\end{equation}
+
+\noindent
+then $k_{ij}' = k_{ij}$, the shared secret.
+Using this, everyone can decrypt $\overline{\texttt{s}}_{i\to j}$
+by
+
+\begin{equation}
+    \hat{s}_{i\to j}
+        = \textsc{DecryptSS}(k_{ij},j,\overline{\texttt{s}}_{i\to j}, b)
+\end{equation}
+
+\noindent
+and determine if
+
+\begin{equation}
+    g_{1}^{\hat{s}_{i\to j}} \overset{?}{=} F_{i}(j).
+    \label{eq:secret_share_test_2}
+\end{equation}
+
+\noindent
+If the DLEQ proof $\pi(k_{ij}')$ shows $k_{ij}'$ is the shared
+secret between $P_{j}$ and $P_{i}$ and we do not have equality in
+Eq.~\eqref{eq:secret_share_test_2}, then $P_{i}$ is acted maliciously
+and should be removed.
+There are two other possibilities:
+$k_{ij}'$ is not the shared secret, or $k_{ij}'$ is the shared secret
+and we have equality in Eq.~\eqref{eq:secret_share_test_2}.
+In both cases, $P_{j}$ acted maliciously and should be removed.
+Thus, when $P_{j}$ submits a claim that $P_{i}$
+failed to share a secret,
+either $P_{j}$'s or $P_{i}$'s stake will be slashed.
+
+In practice, $P_{j}$ will submit $P_{i}$'s broadcast message to an
+Ethereum smart contract along with purported shared secret $k_{ij}'$
+and proof $\pi(k_{ij}')$, and the smart contract would
+determine its validity and burn stake as appropriate.
+
+\input{algs/zk_dleq.tex}
+

@@ -1,0 +1,52 @@
+\begin{algorithm}[p]
+    \caption{Zero-knowledge proof of discrete-logarithm equality.}
+\label{alg:zk_dleq_proof}
+\begin{algorithmic}[1]
+\Function{DLEQ}{$x_{1}$,$y_{1}$,$x_{2}$,$y_{2}$,$\alpha$}
+    \Comment{Construct zk-proof that $y_{1} = x_{1}^{\alpha}$
+        and $y_{2} = x_{2}^{\alpha}$.}
+    \State $w\in_{R}\Z_{q}$
+    \Comment{$x_{i}, y_{i}\in\G_{1}$ with $\abs{\G_{1}}=q$.}
+    \State $t_{1} = x_{1}^{w}$
+    \State $t_{2} = x_{2}^{w}$
+    \State $\texttt{x1} = \texttt{u2b}(x_{1})$
+    \State $\texttt{y1} = \texttt{u2b}(y_{1})$
+    \State $\texttt{x2} = \texttt{u2b}(x_{2})$
+    \State $\texttt{y2} = \texttt{u2b}(y_{2})$
+    \State $\texttt{t1} = \texttt{u2b}(t_{1})$
+    \State $\texttt{t2} = \texttt{u2b}(t_{2})$
+    \State $\texttt{c}  = H(\texttt{x1}||\texttt{y1}||\texttt{x2}||\texttt{y2}||\texttt{t1}||\texttt{t2})$
+    \State $c = \texttt{b2u}(\texttt{c})$
+    \State $r = w - \alpha c \mod q$
+    \State $\pi = \parens{c,r}$
+    \State \Return $\pi$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+    \caption{Zero-knowledge verification of discrete-logarithm equality proof.}
+\label{alg:zk_dleq_verify}
+\begin{algorithmic}[1]
+\Function{DLEQ-verify}{$x_{1}$,$y_{1}$,$x_{2}$,$y_{2}$,$\pi$}
+    \Comment{Determine validity of proof from \texttt{DLEQ}}
+    \State $\parens{c,r} = \pi$
+    \State $t_{1}' = x_{1}^{r}y_{1}^{c}$
+    \State $t_{2}' = x_{2}^{r}y_{2}^{c}$
+    \State $\texttt{x1}  = \texttt{u2b}(x_{1})$
+    \State $\texttt{y1}  = \texttt{u2b}(y_{1})$
+    \State $\texttt{x2}  = \texttt{u2b}(x_{2})$
+    \State $\texttt{y2}  = \texttt{u2b}(y_{2})$
+    \State $\texttt{t1p} = \texttt{u2b}(t_{1}')$
+    \State $\texttt{t2p} = \texttt{u2b}(t_{2}')$
+    \State $\texttt{cp}  = H(\texttt{x1}||\texttt{y1}||\texttt{x2}||\texttt{y2}||\texttt{t1p}||\texttt{t2p})$
+    \State $c' = \texttt{b2u}(\texttt{cp})$
+    \If {$c = c'$}
+        \State \Return \texttt{true}
+    \Else
+        \State \Return \texttt{false}
+    \EndIf
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}

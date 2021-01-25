@@ -1,0 +1,195 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Preamble: New Commands
+
+% Hyperlink setup
+%\hypersetup{
+%    colorlinks=true,
+%    linkcolor=blue,
+%    urlcolor=red,
+%    linktoc=all
+%}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+
+\newcommand{\chgcomment}[1]{\todo[author=CHG,color=green,inline]{#1}}
+
+\numberwithin{equation}{section}
+
+\newcommand{\norm}[1]{\left| \left| #1 \right| \right|}		
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\angles}[1]{\left\langle #1 \right\rangle}
+\newcommand{\abs}[1]{\left| #1 \right|}
+\newcommand{\opernorm}[1]{\left|\left|\left| #1 \right| \right| \right|}
+
+\newcommand{\parens}[1]{\left( #1 \right)}
+\newcommand{\brackets}[1]{\left[ #1 \right]}	
+\newcommand{\braces}[1]{\left\{ #1 \right\}}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\lprline}[1]{\left. #1 \right|}
+
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\Span}{Span}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\Ker}{Ker}
+\DeclareMathOperator{\dlog}{dlog}
+
+\DeclareMathOperator{\Enc}{Enc}
+\DeclareMathOperator{\Dec}{Dec}
+
+\newcommand{\del}[0]{\delta}
+\newcommand{\eps}[0]{\varepsilon}
+\newcommand{\ego}[0]{\varepsilon > 0}% Let epsilon be greater than 0...
+\newcommand{\vphi}[0]{\varphi}
+\newcommand{\N}[0]{\mathbb{N}}
+\newcommand{\R}[0]{\mathbb{R}}
+\newcommand{\Q}[0]{\mathbb{Q}}
+\newcommand{\Z}[0]{\mathbb{Z}}
+\newcommand{\C}[0]{\mathbb{C}}
+\newcommand{\E}[0]{\mathbb{E}}
+\newcommand{\F}[0]{\mathbb{F}}
+\newcommand{\G}[0]{\mathbb{G}}
+\newcommand{\V}[0]{\mathbb{V}}
+\renewcommand{\P}[0]{\mathbb{P}} % Overwrites Paragraph symbol
+\newcommand{\RP}[0]{\mathbb{RP}}
+\newcommand{\pdl}[3]{\left.\frac{\partial #1}{\partial #2} \right|_{#3}}
+\newcommand{\dfl}[2]{\left. d #1 \right|_{#2}}
+\newcommand{\csu}[3]{\Gamma_{#1 #2}^{#3}}
+\newcommand{\csl}[3]{\Gamma_{#1 #2 #3}}
+\newcommand{\Ric}[0]{\textrm{Ric}\,}
+\newcommand{\id}[0]{\textrm{id}}
+
+\newcommand{\sk}[0]{\textrm{sk}}
+\newcommand{\pk}[0]{\textrm{pk}}
+\newcommand{\gsk}[0]{\textrm{gsk}}
+\newcommand{\gpk}[0]{\textrm{gpk}}
+
+\newcommand{\epsa}[0]{\varepsilon_{\textrm{abs}}}
+\newcommand{\epsr}[0]{\varepsilon_{\textrm{rel}}}
+\newcommand{\epsm}[0]{\varepsilon_{\textrm{mach}}}
+
+% New definition of square root:
+% it renames \sqrt as \oldsqrt
+\let\oldsqrt\sqrt
+% it defines the new \sqrt in terms of the old one
+\def\sqrt{\mathpalette\DHLhksqrt}
+\def\DHLhksqrt#1#2{%
+\setbox0=\hbox{$#1\oldsqrt{#2\,}$}\dimen0=\ht0
+\advance\dimen0-0.2\ht0
+\setbox2=\hbox{\vrule height\ht0 depth -\dimen0}%
+{\box0\lower0.4pt\box2}}
+
+
+
+\newtheoremstyle{mythm}% name
+  {12pt}%Space above
+  %{3pt}%Space above
+  {12pt}%Space below
+  {\normalfont}%Body font
+  {0pt}%Indent amount
+  {\bf}% Theorem head font
+  %{\itshape}% Theorem head font
+  {}%Punctuation after theorem head
+  %{.}%Punctuation after theorem head
+  {\newline}%Space after theorem head 2
+  {}%Theorem head spec (can be left empty, meaning ‘normal’)
+
+\theoremstyle{mythm}
+%\newtheorem{thm}{Theorem}[section] % number by section; can replace with chapter
+\newtheorem{thm}{Theorem}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{ax}{Axiom}
+\newtheorem{problem}[thm]{Problem}
+%
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}[section] % number by section
+%
+\theoremstyle{remark}
+\newtheorem{rem}{Remark}[section]
+\newtheorem*{notation}{Notation}
+%
+\newtheorem{hw}[thm]{Homework}
+
+% Hyphenation
+\hyphenation{block-chain}
+\hyphenation{Proposal-Timeout}
+\hyphenation{Pre-Vote-Timeout}
+\hyphenation{Pre-Commit-Timeout}
+\hyphenation{Pending-Proposal}
+\hyphenation{Proposal-Step}
+\hyphenation{Pending-Pre-Vote}
+\hyphenation{Pre-Vote-Nil}
+\hyphenation{Pre-Vote-Nil-Step}
+\hyphenation{Pre-Vote}
+\hyphenation{Pre-Vote-Step}
+\hyphenation{Pending-Pre-Commit}
+\hyphenation{Pre-Commit-Nil}
+\hyphenation{Pre-Commit-Nil-Step}
+\hyphenation{Pre-Commit}
+\hyphenation{Pre-Commit-Step}
+\hyphenation{Pending-Next}
+\hyphenation{Next-Round}
+\hyphenation{Next-Round-Step}
+\hyphenation{Next-Height}
+\hyphenation{Next-Height-Step}
+\hyphenation{Round-Jump}
+\hyphenation{Height-Jump}
+
+\hyphenation{Locked-Value}
+\hyphenation{Valid-Value}
+\hyphenation{Round-Cer-tifi-cate}
+\hyphenation{Round-Share}
+\hyphenation{Dead-Block-Round}
+\hyphenation{Empty-Block}
+
+% Listings Go definition:
+\lstdefinelanguage{Go}{
+    morekeywords=[1]{package,import,func,type,struct,return,defer,panic,%
+     recover,select,var,const,iota,},%
+   morekeywords=[2]{string,uint,uint8,uint16,uint32,uint64,int,int8,int16,%
+     int32,int64,bool,float32,float64,complex64,complex128,byte,rune,uintptr,%
+     error,interface},%
+   morekeywords=[3]{map,slice,make,new,nil,len,cap,copy,close,true,false,%
+     delete,append,real,imag,complex,chan,},%
+   morekeywords=[4]{for,break,continue,range,go,goto,switch,case,fallthrough,if,%
+     else,default,},%
+   morekeywords=[5]{Println,Printf,Error,Print,},%
+   sensitive=true,%
+   morecomment=[l]{//},%
+   morecomment=[s]{/*}{*/},%
+   morestring=[b]',%
+   morestring=[b]",%
+   morestring=[s]{`}{`},%
+}
+
+% Listings CapnProto definition:
+\lstdefinelanguage{CapnProto}{
+    morekeywords=[1]{using,import,import,func,type,struct,return,defer,panic,%
+     recover,select,var,const,package},%
+   morekeywords=[2]{string,},%
+   morekeywords=[3]{map,slice,make,new,nil,len,cap,copy,close,true,false,%
+     delete,append,real,imag,complex,chan,},%
+   morekeywords=[4]{for,break,continue,range,go,goto,switch,case,fallthrough,if,%
+     else,default,},%
+   morekeywords=[5]{Println,Printf,Error,Print,},%
+   morekeywords=[6]{@0,@1,@2,@3,@4,@5,@6,@7,},%
+   sensitive=true,%
+   morecomment=[l]{\#},%
+   morecomment=[s]{/*}{*/},%
+   morestring=[b]',%
+   morestring=[b]",%
+   morestring=[s]{`}{`},%
+}
+

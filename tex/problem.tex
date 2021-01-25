@@ -1,0 +1,74 @@
+\section{The Problem}
+MadNetwork was conceptualized as a mechanism to address many of the
+long-standing issues surrounding the modern advertising industry.
+The number of problems that plague this space are no secret.
+For instance, it has been estimated that in 2017 nearly 40\%  of all
+programmatic impressions were fraudulent~\cite{DigitalAdFraud2018}.
+In 2018 that same fraud accounted for more than \$19 Billion USD
+worldwide~\cite{DigitalAdFraud2018}.
+These numbers seem unimaginably large already, but fraud is actually
+increasing at an exponential rate~\cite{DigitalAdFraud2018}.
+The problem will get much worse before it gets better.
+
+Although many solutions have been proposed to address this fraud, they
+have proven unable to make a meaningful impact as of now.
+A prime example of this lack of innovation rests in ads.txt.
+This solution was introduced in 2017~\cite{IABAdsTxt}
+and in spite of widespread adoption, the general trend of
+fraud has done anything but relent.
+
+The apparent void of solutions to this ever-growing problem has caused
+many companies to turn to any technology that can promise a potential solution.
+Given the nature of advertising fraud, blockchain seems a rational solution.
+Billions of dollars are securely transferred every day using these
+technologies in a transparent and auditable fashion~\cite{EthDVT}.
+The reality is, although many solutions work at the pilot level, the
+success of these solutions is dependent upon the completely unrealistic
+settings in which these pilots are executed.
+The core problem any AdTech blockchain solution must face is massive scale.
+This scale is what lacks in the pilot environment.
+
+Although many blockchain projects have pitched themselves as the savior
+of AdTech, no solutions have, as of now, addressed the problem in a
+scalable manner.
+The repeated theme of many AdTech approaches to blockchain necessitates
+injecting large volumes of data into a blockchain system with the
+intent of bringing transparency to the supply chain.
+These projects seemed to have forgotten the hard-learned lessons
+surrounding blockchain scalability, or the inherent
+lack thereof~\cite{BlockchainScaling}.
+Another often cited mechanism of revolutionizing the AdTech space
+through blockchain involves moving the real time bidding process into
+smart contract systems.
+The promise of such systems is to remove the middlemen of the supply
+chain while making the open bid process more transparent.
+Although noble in intent, these companies failed to realize that
+distributed consensus takes time.
+Blockchains are unable to produce blocks fast enough to meet the
+sub-second demands of AdTech, not to mention the millions of requests
+per second~\cite{BlockchainTPS}.
+The good news is AdTech can benefit from blockchain by building systems
+that address the heart of the problem.
+
+At the core of advertising, fraud is a very old problem.
+A problem that has been partially addressed many times in many
+different ways.
+That problem is data authenticity and integrity.
+The most recent proposal of ads.cert~\cite{AdsDCert} reflects this reality.
+In order to prevent fraud, the information being exchanged in the real
+time bidding supply chains of modern AdTech must be protected against
+manipulation and this information must have provable origination.
+The IAB has unfortunately failed to see the inherent flaw in the system
+they have proposed.
+Similar to the fact that AdTech blockchain companies are still largely
+struggling with the modern realities of the very technology they depend
+upon, the specification fails to adequately
+cover the ever growing subset of the advertising market that is not
+directly attributable to a web domain.
+Any solution that hopes to be more than a band-aid for the current
+problems of AdTech must operate in a manner that will be viable for
+mobile applications, over-the-top streaming services, and even mediums
+we have not as of yet contemplated.
+Further, these solutions are needed today.
+By writing ads.cert into openRTB 3.X and not providing backward
+compatibility, adoption will be significantly delayed.

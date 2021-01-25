@@ -1,0 +1,33 @@
+\section{Canonical Object Encoding}
+
+As with any blockchain system, a canonical encoding of objects and
+messages is required to allow validation of cryptographic signatures
+across systems.
+Rather than focus time on solving the problem of building a canonical
+encoding, we elected to select an existing robust encoding mechanism.
+This allowed us to focus more time on difficult problems that are more
+relevant to our direct intent.
+This also allowed the system to be replicated in other programming
+languages more readily by selecting a cross language encoding mechanism.
+
+In order to achieve these goals, Cap'n Proto has been selected as the
+canonical serialization format.
+For those readers who may be unfamiliar with Cap'n Proto, this protocol
+was built by the same engineer that designed Protobufs for Google.
+The most important difference between Protobufs and Cap'n Proto, for
+the MadNetwork application, is the fact that all Cap'n Proto objects
+have a canonical encoding that is preserved even under additive changes
+of the object definitions~\cite{CapnProto}.
+This protocol has been ported to many languages and has been used in
+production systems by enterprise companies such as
+CloudFlare~\cite{CapnProtoNews}.
+This protocol is only used for the serialization of objects and our
+system does not integrate any of the RPC mechanisms associated with the
+Cap'n Proto specification.
+
+The selection of this encoding scheme is important to the following
+sections.
+It influenced the manner in which objects have been constructed to
+reflect the operation of the encoding scheme.
+This may be seen in the composition of objects to allow complex
+cryptographic proofs to be formed in an elegant manner.

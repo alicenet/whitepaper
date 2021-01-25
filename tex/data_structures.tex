@@ -1,0 +1,79 @@
+\section{Data Structures}
+
+\subsection{Compact Sparse Merkle Tries}
+
+In order to allow for the desired set of diverse verifiable data
+structures that are necessary in a blockchain system, we elected to
+select a general purpose tool that could fill most roles in our system
+without unacceptably sacrificing performance.
+Although more optimal structures may exist for some applications,
+forcing developers to build many complex forms of verifiable data
+structures complicates initial engineering and future ports to other languages.
+Thus, a single structure was selected that could be used in all current cases.
+This solution is based on a modified form of the open source Aergo State Trie.
+This is a Compact Sparse Merkle Trie that allows for compact proofs of
+inclusion/exclusion, stores a leaf at the optimal sub height, and
+operates as a base sixteen trie while actually being a true binary trie
+implementation.
+This polymorphic nature is derived from the manner in which the trie is built.
+The length of a generalized encoded proof of inclusion/exclusion
+requires $O(\log n)$ merkle proof keys, with an additional overhead of 64
+bytes to communicate the key and value of the proof.
+The proof also requires $O(\log n)$ bits to communicate the positioning of
+the merkle proof keys in the trie.
+Thus, the total size is effectively $O(\log n)$.
+
+The trie itself is a binary trie where all nodes are stored in height
+four sub tries.
+Each sub-trie may be loaded as a batched operation that accommodates a
+compact encoding through the use of bit fields that are similar to
+those used in the proofs.
+Thus, for a given height four sub trie, only nonempty nodes need be
+stored, and the bit field may be parsed to determine the positions
+these nodes should occupy in the actual trie.
+The process of updating the trie may be performed in a concurrent
+manner by applying all leaf transformations first and then concurrently
+calculating the hashes with a blocking operation on each height four
+sub-trie at the leaf levels.
+Thus, each sub-sub-trie may be calculated before the root of the
+sub-trie itself is calculated, and this concurrency may be arbitrarily
+extended across the trie.
+
+\subsection{State Trie}
+
+The State Trie is a CSMT that includes two types of objects and has the
+root value of the trie updated and stored in every block.
+The first object is the hash of a UTXO stored in the location of its UTXOID.
+The second type of object is the hash of a deposit nonce that is stored
+in the location that is equal to the deposit nonce.
+The first objects, the UTXO type objects, allow a compact proof of
+inclusion or exclusion to be formed for the UTXO at a given block height.
+This is useful for proofs of datastores, proofs to light clients, and
+allows fast syncing of the chain from a known good block, such as a snapshot.
+When a UTXO is created, it is added to the trie.
+When the UTXO is consumed, it is removed from the trie.
+Deposits work in an inverse manner.
+When a deposit is spent, it is added to the trie and shall remain there
+in perpetuity.
+This addition tracks the spending of deposits.
+
+\subsection{BlockHash Trie}
+
+The BlockHash Trie is a CSMT that stores the block hash of each block
+mined at a leaf value where the key is the zero padded block number.
+This value is included in every block, where the value in each block
+references the root of the trie after inclusion of the previous block.
+The structure is maintained in order to allow light clients to query
+blocks on a singular basis with proof of inclusion for each queried block.
+The proofs themselves are intended to start from a snapshot block and
+allow previous blocks from the snapshot to be proven as valid blocks
+from the entire chain.
+This system also has the benefit of allowing proofs of sidechain state
+to be formed much more readily in the Ethereum blockchain due to the
+ability to easily prove a block header as having a specific block hash
+as a fixed complexity procedure.
+Alternative systems must either track every block hash in the Ethereum
+blockchain, or large batches of contiguous blocks must be injected in
+order to prove state at an arbitrary block.
+We overcome these limitations through the proofs of inclusion and
+exclusion offered by the CSMT.

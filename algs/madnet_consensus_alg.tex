@@ -1,0 +1,163 @@
+% The entire consensus algorithm in pseudocode
+\begin{algorithm}[p]
+\caption{Main loop of MadNet Consensus algorithm.}
+\label{alg:madnet_consensus}
+\begin{algorithmic}[1]
+\Function{MainBlockLoop}{$ $}
+    \For {$r = 1$; $r \le \textsc{DeadBlockRound}$; $r$++}
+        \If {$r = \textsc{DeadBlockRound}$}
+            \State \textsc{DeadBlockRoundProcedure}$()$
+            \State \textbf{break}
+        \EndIf
+        \State $\textsc{nhBool} = \textsc{RegularRoundProcedure}()$
+        \If {\textsc{nhBool}}
+            \State \textbf{break}
+            \Comment{Proceed to the next block height}
+        \EndIf
+    \EndFor
+    \State \Return
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{DeadBlockRound procedure}
+\label{alg:dbr_proc}
+\begin{algorithmic}[1]
+\Function{DeadBlockRoundProcedure}{$ $}
+    \State $\textsc{PreVote}(\textsc{EmptyBlock})$
+    \State Wait until $\textsc{EmptyBlockPreVotes}\ge\textsc{Threshold}$
+    \State $\textsc{PreCommit}(\textsc{EmptyBlock})$
+    \State Wait until $\textsc{EmptyBlockPreCommits}\ge\textsc{Threshold}$
+    \State $\textsc{NextHeight}(\textsc{EmptyBlock})$
+    \State \Return
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{Regular Round procedure}
+\label{alg:rr_proc}
+\begin{algorithmic}[1]
+\Function{RegularRoundProcedure}{$ $}
+    \State \textsc{doPendingProposalStep}$()$
+    \State Wait for \textsc{ProposalTimeout}
+    \State $\textsc{CurProp}, \textsc{LocalPreVote}
+        = \textsc{doPendingPreVoteStep}()$
+    \State Wait for \textsc{PreVoteTimeout}
+    \State \textsc{doPendingPreCommitStep}(\textsc{CurProp},
+        \textsc{LocalPreVote})
+    \State Wait for \textsc{PreCommitTimeout}
+    \State $\textsc{nhBool} = \textsc{doPendingNextStep}(\textsc{CurProp})$
+    \State \Return \textsc{nhBool}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{Proposal procedure}
+\label{alg:proposal_proc}
+\begin{algorithmic}[1]
+\Function{doPendingProposalStep}{$ $}
+    \If {\textsc{IsProposer}$()$}
+        \If {$!\textsc{LockedValueCurrent}()
+                \ \land\  !\textsc{ValidValueCurrent}()$}
+            \State $\textsc{NewProposal} = \textsc{MakeNewProposal}()$
+            \State $\textsc{Propose}(\textsc{NewProposal})$
+            \State $\textsc{ValidValue} = \textsc{NewProposal}$
+        \ElsIf {$!\textsc{LockedValueCurrent}()
+                \land \textsc{ValidValueCurrent}()$}
+            \State $\textsc{Propose}(\textsc{ValidValue})$
+        \Else
+            \State $\textsc{Propose}(\textsc{LockedValue})$
+        \EndIf
+    \EndIf
+    \State \Return
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{PreVote procedure}
+\label{alg:prevote_proc}
+\begin{algorithmic}[1]
+\Function{doPendingPreVoteStep}{$ $}
+    \State $\textsc{CurProp} = \textsc{GetCurrentProposal}()$
+    \State $\textsc{LocalPreVote} = \textsc{Nil}$
+    \If {$\textsc{CurProp} \ne \textsc{Nil}$}
+        \If {$!\textsc{LockedValueCurrent}()
+                \ \land\  !\textsc{ValidValueCurrent}()$}
+            \If {$\textsc{CurProp}.\textsc{IsValid}()$}
+                \State $\textsc{PreVote}(\textsc{CurProp})$
+                \State $\textsc{ValidValue} = \textsc{CurProp}$
+                \State $\textsc{LocalPreVote} = \textsc{CurProp}$
+            \Else
+                \State $\textsc{PreVote}(\textsc{Nil})$
+            \EndIf
+        \ElsIf {$!\textsc{LockedValueCurrent}()
+                \land \textsc{ValidValueCurrent}()$}
+            \If {$\textsc{CurProp} = \textsc{ValidValue}$}
+                \State $\textsc{PreVote}(\textsc{ValidValue})$
+                \State $\textsc{LocalPreVote} = \textsc{CurProp}$
+            \Else
+                \State $\textsc{PreVote}(\textsc{Nil})$
+            \EndIf
+        \Else
+            \If {$\textsc{CurProp} = \textsc{LockedValue}$}
+                \State $\textsc{PreVote}(\textsc{LockedValue})$
+                \State $\textsc{LocalPreVote} = \textsc{CurProp}$
+            \Else
+                \State $\textsc{PreVote}(\textsc{Nil})$
+            \EndIf
+        \EndIf
+    \Else
+        \State $\textsc{PreVote}(\textsc{Nil})$
+        \Comment{No current proposal}
+    \EndIf
+    \State \Return \textsc{CurProp}, \textsc{LocalPreVote}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{PreCommit procedure}
+\label{alg:precommit_proc}
+\begin{algorithmic}[1]
+\Function{doPendingPreCommitStep}{\textsc{CurProp}, \textsc{LocalPreVote}}
+    \State $\textsc{NumPreVotes}
+        = \textsc{GetCurrentPreVotes}(\textsc{CurProp})$
+    \If {$\textsc{NumPreVotes} \ge \textsc{Threshold}$}
+        \State $\textsc{ValidValue} = \textsc{CurProp}$
+        \If {$\textsc{CurProp} = \textsc{LocalPreVote}$}
+            \State $\textsc{PreCommit}(\textsc{CurProp})$
+            \State $\textsc{LockedValue} = \textsc{CurProp}$
+            \State \Return
+        \Else
+            \State $\textsc{ValidValue} = \textsc{CurProp}$
+        \EndIf
+    \EndIf
+    \State $\textsc{PreCommit}(\textsc{Nil})$
+    \State \Return
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{NextStep procedure}
+\label{alg:nextstep_proc}
+\begin{algorithmic}[1]
+\Function{doPendingNextStep}{$\textsc{CurProp}$}
+    \State $\textsc{nhBool} = \textsc{False}$
+    \State $\textsc{NumPreCommits}
+        = \textsc{GetCurrentPreCommits}(\textsc{CurProp})$
+    \If {$\textsc{NumPreCommits} \ge \textsc{Threshold}$}
+        \State $\textsc{NextHeight}(\textsc{CurProp})$
+        \State $\textsc{nhBool} = \textsc{True}$
+    \Else
+        \State \textsc{NextRound}$()$
+    \EndIf
+    \State \Return \textsc{nhBool}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+

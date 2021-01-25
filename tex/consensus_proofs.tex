@@ -1,0 +1,305 @@
+\subsubsection{Proof of Safety}
+
+The proof of safety relies on this observation from
+Lemma~\ref{lem:threshold_subsets}: two subsets with at least
+a threshold number of validators in each subset will share at least one
+honest validator.
+
+\begin{lem}
+\label{lem:threshold_subsets}
+Let $f$ be the number of malicious validators.
+Given any two subsets with at least $2f+1$ validators in a system
+containing $3f+1$ validators, those two subsets share at least $f+1$ validators.
+Thus, these two subsets share at least one honest validator.
+\end{lem}
+
+\begin{proof}
+Let $A$ and $B$ be two subsets with at least $2f+1$ validators
+chosen from $N = 3f+1$ validators.
+From De Morgan’s laws, we know
+
+\begin{equation*}
+    A \cap B = (A^{c} \cup B^{c})^{c}.
+\end{equation*}
+
+\noindent
+Here, $A^{c}$ denotes the complement of $A$ (that is, the elements of the
+system not in A).
+In what follows, $\abs{A}$ denotes the number of elements in $A$.
+Thus, we have
+
+\begin{align*}
+    \abs{A\cap B} &= \abs{(A^{c} \cup B^{c})^{c}} \\
+        &= N - \abs{A^{c} \cup B^{c}} \\
+        &\ge N - \parens{\abs{A^{c}} + \abs{B^{c}}} \\
+        &\ge N - 2f \\
+        &= f + 1.
+\end{align*}
+
+\noindent
+Their intersection shares at least $f+1$ validators and there are $f$
+malicious validators, so we see that $A$ and $B$ share at least one honest
+validator.
+\end{proof}
+
+This lemma ensures that honest participants will always agree when
+PreCommitting a proposal or submitting a NextHeight message in a given
+round, as the next two lemmas show.
+
+\begin{lem}
+\label{lem:2_honest_precommit}
+In any round, any 2 honest participants who PreCommit a proposal will PreCommit
+the same proposal.
+\end{lem}
+
+\begin{proof}
+Suppose two honest participants PreCommit proposals $P_{1}$ and $P_{2}$.
+To PreCommit a proposal, they both must have knowledge of at least $2f+1$
+PreVote messages from participants.
+There corresponds subsets $S_{1}$ and $S_{2}$, where $S_{1}$ contains
+the participants who submitted prevotes for $P_{1}$ and $S_{2}$ contains
+the participants who submitted PreVotes for $P_{2}$.
+By Lemma~\ref{lem:threshold_subsets},
+$S_{1}$ and $S_{2}$ share at least one honest participant.
+An honest participant will only PreVote for one value in a round, so the
+proposals $P_{1}$ and $P_{2}$ must agree.
+\end{proof}
+
+\begin{lem}
+\label{lem:2_honest_nextheight}
+In any round, any 2 honest participants who submit a NextHeight message
+will submit a NextHeight message for the same proposal.
+\end{lem}
+
+\begin{proof}
+Mutatis mutandis, the proof is the same as that of
+Lemma~\ref{lem:2_honest_precommit}.
+\end{proof}
+
+We are now able to show the multiple distinct NextHeight messages from honest
+participants are not able to occur before the DeadBlockRound.
+This is a stronger result than Lemma~\ref{lem:2_honest_nextheight}
+and follows from the fact that a
+threshold number of LockedValues must occur before submitting a NextHeight
+message.
+
+\begin{lem}
+\label{lem:2_distinct_nextheight}
+In any round before the DeadBlockRound, any 2 honest participants
+who submit a NextHeight message will submit a NextHeight message
+for the same proposal.
+\end{lem}
+
+\begin{proof}
+Suppose we have not yet reached the DeadBlockRound.
+Let $P_{1}$ and $P_{2}$ be NextHeight messages from two honest participants
+with corresponding signing subsets $S_{1}$ and $S_{2}$.
+When $P_{1}$ is signed, all members of $S_{1}$ are supposed to set
+LockedValue to the proposal corresponding to $P_{1}$ because they
+PreCommitted $P_{1}$.
+Similarly, all members of $S_{2}$ are supposed to set LockedValue
+to the proposal corresponding to $P_{2}$ because they PreCommitted $P_{2}$.
+This implies $S_{1}$ and $S_{2}$ are two subsets of participants of size
+at least $2f+1$ with LockedValue set.
+Once an honest participant sets his LockedValue, it is never unset before the
+DeadBlockRound.
+By Lemma~\ref{lem:threshold_subsets},
+$S_{1}$ and $S_{2}$ have at least one honest participant in common
+with his LockedValue set to one proposal.
+Thus, we see that the $P_{1}$ and $P_{2}$ NextHeight messages must be
+for the same proposal when they are submitted by honest participants.
+\end{proof}
+
+Lemma~\ref{lem:honest_signed_nextround}
+is useful in bounding the number of honest validators who may not
+proceed to the next round.
+
+\begin{lem}
+\label{lem:honest_signed_nextround}
+In order for $2f+1$ validators to enter a round, at least $f+1$
+honest validators must have signed a NextRound message and at most $f$
+honest validators failed to sign a NextRound message.
+\end{lem}
+
+\begin{proof}
+We recall an honest validator may not enter a round without a valid
+RoundCertificate.
+A NextRound message contains two objects.
+The first object is a RoundCertificate for the current round.
+The second is a RoundShare object for the next round.
+A RoundCertificate contains both round number and block height as internal
+fields, and in order to form a valid Round Certificate, at least $2f+1$
+validators must have signed a RoundShare.
+Because there are at most $f$ dishonest validators who signed for the
+RoundCertificate, at least $f+1$ honest validators must have also signed the
+RoundCertificate.
+Thus, at most $f$ honest validators did not sign the RoundCertificate.
+\end{proof}
+
+Once validators reach the DeadBlockRound, they will not acknowledge any
+NextHeight messages for any preceding round.
+This ensures that dishonest validators are not able to fork the chain by
+producing a block based on those NextHeight messages.
+
+\begin{lem}
+\label{lem:sign_rc_dbr}
+If at least $2f+1$ participants sign the RoundCertificate to the DeadBlockRound,
+then it is not possible for $2f+1$ participants to form a valid NextHeight
+message for any round preceding the DeadBlockRound.
+\end{lem}
+
+\begin{proof}
+Given Lemma~\ref{lem:honest_signed_nextround}
+and the rule that any honest validator who has signed a
+NextRound message for the DeadBlockRound will never sign or acknowledge any
+NextHeight message from a previous round, at least $f+1$ honest validators must
+have signed a NextRound message for the DeadBlockRound if there exists a
+RoundCertificate for the DeadBlockRound.
+If at least $f+1$ honest validators are in the DeadBlockRound,
+at most $f$ honest validators may remain in a round preceding
+the DeadBlockRound.
+If at most $f$ honest validators remain in a preceding round, then the malicious
+validators are unable to use the signatures of $f$ honest validators to form a
+set of $2f+1$ valid NextHeight messages.
+Therefore, the malicious validators may not form a block from those NextHeight
+messages.
+\end{proof}
+
+With this assurance, we allow for participants to safely proceed to the
+DeadBlockRound even if they previously were locked onto a NextHeight message.
+
+\begin{lem}
+\label{lem:safe_unlock_nh_dbr}
+It is safe for any participant who is locked on a NextHeight message to unlock
+and proceed to the DeadBlockRound upon receiving a RoundCertificate for the
+DeadBlockRound.
+\end{lem}
+
+\begin{proof}
+This follows from Lemma~\ref{lem:sign_rc_dbr}.
+\end{proof}
+
+The previous work allows us to show that we will converge to the EmptyBlock
+when a RoundCertificate for the DeadBlockRound exists.
+This ensures new blocks will be created even if no transactions are performed.
+
+\begin{lem}
+\label{lem:emptyblock_rc_dbr}
+The DeadBlockRound must converge to the EmptyBlock if a RoundCertificate for
+the DeadBlockRound exists.
+\end{lem}
+
+\begin{proof}
+Upon entering the DeadBlockRound, every valid process will immediately PreVote
+the EmptyBlock and ignore all other contradicting votes.
+These contradicting votes include any PreVote for a Proposal that is not the
+EmptyBlock, any NextRound message, any PreCommit that is not a PreCommit for
+the EmptyBlock, and any PreVoteNil or PreCommitNil message as well.
+As a result of Lemma~\ref{lem:sign_rc_dbr},
+at least $f+1$ honest validators enter the DeadBlockRound.
+Therefore, the honest validators who enter the DeadBlockRound will only
+progress once at least $f$ other validators also PreVote in the DeadBlockRound.
+Because we assume all messages are eventually received, the at most $f$ honest
+validators who did not sign the NextRound Certificate for the DeadBlockRound
+will eventually receive the RoundCertificate for the DeadBlockRound and PreVote
+for the EmptyBlock in the DeadBlockRound.
+It follows that the round eventually converges to the EmptyBlock and no other
+possible block.
+\end{proof}
+
+The previous work also allows us to show we will not converge to more
+than one valid block at a given block height.
+
+\begin{lem}
+It is not possible for our system to converge to more than one valid block for
+any given block height.
+\end{lem}
+
+\begin{proof}
+If the round enters the DeadBlockRound, then Lemma~\ref{lem:emptyblock_rc_dbr}
+shows that we will converge to the EmtpyBlock.
+Lemma~\ref{lem:2_distinct_nextheight}
+proves that it is not possible to have more than one proposal for which
+an associated NextHeight message has been validly formed before the
+DeadBlockRound.
+Lemma~\ref{lem:safe_unlock_nh_dbr}
+allows for a safe transition into the DeadBlockRound.
+\end{proof}
+
+The next few lemmas assure the behavior of honest validators as it relates to
+voting.
+
+\begin{lem}
+\label{lem:honest_must_prevote}
+An honest validator who enters a round must eventually PreVote or PreVoteNil in
+that round.
+\end{lem}
+
+\begin{proof}
+All honest validators will either PreVote or PreVoteNil at the termination of
+the ProposalTimeout.
+Therefore, they must eventually prevote.
+\end{proof}
+
+\begin{lem}
+\label{lem:2fp1_precommit}
+As long as $2f+1$ honest validators enter a round, there will be at least
+$2f+1$ PreCommits or PreCommitNils in that round.
+\end{lem}
+
+\begin{proof}
+By Lemma~\ref{lem:honest_must_prevote},
+all honest validators will eventually PreVote or PreVoteNil in a round.
+In the event that a PreVote is received for a competing Proposal from the
+perspective of a validator who has already PreVoted, that validator will count
+this PreVote as a PreVoteNil.
+From there, the honest validators will be able to either PreCommit or
+PreCommitNil, thus leading to $2f+1$ PreCommits or PreCommitNils.
+\end{proof}
+
+\begin{lem}
+\label{lem:2fp1_nextround}
+As long as $2f+1$ honest validators enter a round, there will be at least
+$2f+1$ NextRound or NextHeight messages in that round.
+\end{lem}
+
+\begin{proof}
+Mutatis mutandis, the proof is the same as that of
+Lemma~\ref{lem:2fp1_precommit}.
+\end{proof}
+
+We now show that a round must terminate or a higher block is formed.
+
+\begin{lem}
+\label{lem:valid_rouncert_exists}
+If at any time a valid RoundCertificate exists for a round, that round must
+eventually terminate or a higher block must be formed.
+\end{lem}
+
+\begin{proof}
+We first focus on the case when no validator has signed a DeadBlockRound
+RoundCertificate.
+In this case, we may have that $f+1$ honest validators have signed a NextHeight
+message and the round cannot terminate but a new block will be formed because
+the validators will eventually observe the previous NextHeight messages and
+will follow them.
+Otherwise, at least $f+1$ honest validators will have entered the current round
+and it must eventually terminate; we will fall back to the previous case if any
+of these validators observe a NextHeight message.
+
+In the case that a DeadBlockRound RoundCertificate exists, we have already
+proven termination by Lemma~\ref{lem:emptyblock_rc_dbr}.
+\end{proof}
+
+Taken together, we are now able to show that our blockchain will make forward
+progress provided there are a limited number of faults.
+
+\begin{lem}
+Our blockchain will always make forward progress so long as there are no more
+than $f$ faults in the system.
+\end{lem}
+
+\begin{proof}
+If there are at most $f$ faults, then all rounds must terminate or a new block
+will be formed by Lemma~\ref{lem:valid_rouncert_exists}.
+\end{proof}

@@ -1,0 +1,33 @@
+\begin{algorithm}[tp]
+\caption{Legendre symbol for $\F_{p^{2}}$; Alg.~8
+    from~\cite{adj2012sqrtEvenExt}}
+\label{alg:legendre-fp2}
+\begin{algorithmic}[1]
+\Function{LegendreFP2}{$a$}
+    \Comment{$a = a_{0} + a_{1}i\in\F_{p^{2}}$}
+    \State $\alpha = a_{0}^{2} + a_{1}^{2}$
+    \State \Return $\chi_{p}(\alpha)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[tp]
+\caption{Square Root in $\F_{p^{2}}$; Alg.~9
+    from~\cite{adj2012sqrtEvenExt}}
+\label{alg:sqrt-fp2}
+\begin{algorithmic}[1]
+\Function{SqrtFP2}{$a$}
+    \Comment{$a\in\F_{p^{2}}$; assuming $a$ is quadratic residue}
+    \State $t = a^{\frac{p-3}{4}}$
+    \State $y = ta$
+    \State $\alpha = ty$
+    \If {$\alpha = -1$}
+        \State $x = iy$
+    \Else
+        \State $b = \parens{1+\alpha}^{\frac{p-1}{2}}$
+        \State $x = by$
+    \EndIf
+    \State \Return $x$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}

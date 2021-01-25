@@ -1,0 +1,143 @@
+\section{The Story}
+
+MadNetwork has progressed through many iterations to bring the project
+to where we are today.
+In each of those iterations, we learned what could work and arguably,
+more importantly, what would never work.
+In an early pilot of the technology we leverage the Ethereum blockchain
+as a means to rapidly iterate design patterns.
+Although the Ethereum network is an outstanding piece of technology
+that will forever change the world, we kept finding the sharp edges
+while using the technology in the enterprise setting.
+The costs of storage, the inherent limitations on throughput, the
+complications around cleaning up stale state, and the complexity of
+integrating enterprise partners into the technology all caused
+complications.
+These efforts led us to research other systems that addressed the
+concerns we were experiencing.
+What we found was that these problems are by no means isolated.
+In fact, what we found was that the problems were fairly universal.
+
+This early pilot project was a primitive form of our end goal.
+That goal was to build a better public key infrastructure (PKI).
+Given an application specific PKI, all members of the advertising
+supply chain can be assigned strongly unforgeable identities.
+By not linking the resolution of these keys to a presupposition that
+all members of the AdTech supply chain must have a registered internet
+domain, we open the possibility of using this system to more
+technologies.
+These identities may be used for many purposes, but chief among them is
+proofs of integrity and authenticity for messages communicated through
+third parties.
+In this way, we may prevent many forms of fraud and gain insight into
+the supply chains themselves.
+These systems also allow the negotiation and/or distribution of
+encryption keys between parties.
+In the context of advertising this means we can build broadcast
+encryption technologies that allow private data to be streamed through
+openRTB such that only the intended party/parties may decrypt it.
+This capability is sorely needed due to the recent industry
+transformations being forced by GDPR, CCPA, and other privacy-centric
+legislation.
+Additional capabilities are also possible due to the inclusion of
+pairing-based cryptography.
+These include Hierarchical Identity Based Cryptography for the use of
+securely sharing identities between partners such that external groups
+are not needed for matching operations.
+In summary, this system also allows network participants to communicate
+private data in the oRTB environment, as well as communicate identity
+of the user in the bid request to opted-in recipients.
+
+Although x.509 stands as the de facto standard for enabling enterprise
+encryption and server authentication, this system is built on
+antiquated technologies that have been the root of many problems in the
+past two decades.
+Further, x.509 is fundamentally ill-equipped to perform all but the
+most basic of what was needed to fully address the problems of the
+AdTech industry.
+Thus, a new system is needed to combat the concerns of AdTech.
+This is once again why the IAB has begun work on ads.cert.
+Asymmetric cryptography would appear to be the best solution we have to
+protecting digital commerce.
+This should come as no surprise.
+What should be surprising is that a high tech industry such as AdTech
+has not managed to implement a solution already.
+
+In order to build such a PKI using the Ethereum blockchain, smart
+contracts were leveraged that allowed a root of trust to associate
+cryptographic identities with real world businesses.
+This decentralized design meant that the cryptographic identity of any
+registered business could be referenced in a fully transparent system,
+without the need to contact our systems in the process.
+The other benefit to such a design was that unlike x.509 where
+revocation and transparency have been a pain point for years, we
+inherited these properties by default from day one.
+This system also afforded the ability for any registered entity to
+register new cryptographic keys, for many different applications, with
+no interaction from our systems outside initial registration.
+This system even allowed those safe keys to be revoked by simply
+removing them from the blockchain.
+
+What we were building was analogous to modern technologies intended to
+shore up x.509 against rampant fraud that occurred in the last decade.
+Specifically, technologies such as Certificate Transparency.
+Unfortunately, simply using the core concepts of Certificate
+Transparency still did not address the issue of revocation.
+Considering the vast fraud that already plagues the AdTech industry,
+any PKI solution that did not accommodate efficient revocation and
+scale to millions of requests per second was a liability, not a
+solution.
+This inability to scale to millions of requests is the very failure of
+OCSP, another x.509 technology that was intended to address revocation.
+Fortunately, there does exist a mechanism to address the problem of
+revocation.
+This solution will be covered during the formal discussion of the PKI
+we have built.
+
+Although the Ethereum system did work for the purposes of a pilot
+project, bringing thousands of new enterprise systems into the fold
+would eventually prevent any solution built on this technology from
+succeeding due to the scaling constraints of the underlying system.
+What we needed was a system that was built for the specific purpose of
+creating a better PKI.
+What we needed was a cryptographically verifiable map that could expire
+stale records automatically, was capable of sharding so that it could
+grow smoothly with system utilization, was inexpensive to write data
+into, and had mechanisms through which tokens could be abstracted for
+enterprise partners.
+What we needed was MadNetwork.
+
+Unfortunately, such a system did not exist at that time.
+The lack of such a system seems astonishing given the trends in
+enterprise adoption of blockchain technology.
+Many enterprise projects do not require the full complexity of a smart
+contract enabled blockchain.
+Further, many enterprise projects require that data not be forever
+immutable, such as that mechanism that is afforded by Bitcoin's
+OpReturn method of writing data.
+
+In order to accommodate the above challenges, while also acknowledging
+that creating strong consensus algorithms is a nontrivial task,
+MadNetwork has been built as an Ethereum sidechain utilizing a Proof of
+Stake consensus algorithm.
+By anchoring MadNetwork into an Ethereum smart contract system, those
+same properties that otherwise make Ethereum a difficult technology in
+the enterprise setting may be leveraged for the benefit of creating a
+more secure system.
+These benefits include the ability to codify complex governance and
+fail-safe mechanisms that would otherwise be incredibly difficult in
+the stand-alone Proof of Stake setting.
+
+MadNetwork has been designed to facilitate building a fully-auditable
+PKI that allows for efficient revocation as well as compact proofs of
+certificate non-revocation.
+This system has also been built to allow proofs of the state of the
+sidechain to be verified within the Ethereum virtual machine.
+Our hope is that, outside of the industry partners we are already
+building solutions for, other members of the Ethereum ecosystem may
+also leverage this technology to support their own projects.
+If this were to occur, it would allow what is the effective equivalent
+of smart contract state cold storage to be leveraged within the
+Ethereum blockchain.
+This would ultimately help address some of the very scaling issues we
+experienced while using Ethereum in the past.

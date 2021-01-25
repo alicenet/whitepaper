@@ -1,0 +1,26 @@
+\subsection{Shared Secret Encryption}
+\label{ssec:secret_enc}
+
+As mentioned above, the shared secret from
+$P_{i}$ to $P_{j}$ is $s_{i\to j} = f_{i}(j)$.
+To encrypt this, we need to compute their shared secret:
+
+\begin{equation}
+    k_{ij} = \pk_{i}^{\sk_{j}} = \pk_{j}^{\sk_{i}} = 
+    g_{1}^{\sk_{i}\sk_{j}}.
+\end{equation}
+
+\noindent
+Encryption and decryption are based on the idea of a one-time pad;
+in particular, we use outputs of cryptographic hashes of
+the $x$-coordinate of the shared secret along with the index
+of the participant receiving the message as our ``one-time pad''.
+This does not meet the technical definition of a one-time pad
+as it is usually defined (one standard reference is~\cite{hac1996}),
+but the idea is similar.
+By including the index of the intended recipient in the hash function,
+each symmetric encryption key is unique.
+See Alg.~\ref{alg:enc_dec} for details.
+
+\input{algs/encryption_and_decryption.tex}
+

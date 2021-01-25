@@ -1,0 +1,139 @@
+\section{Networking}
+
+\subsection{Overview of Networking Stack}
+
+The networking stack consists of several layers that have been selected
+to allow for code generation and security.
+These layers consist of low level networking protocols upon which the
+Peer-to-Peer networking, Discovery, and BootNode protocol have been built.
+
+\subsection{Brontide}
+
+In order to provide authenticated encryption, we selected Brontide as
+the backbone of our networking stack.
+Brontide is the authenticated encryption protocol that is used by the
+Bitcoin Lightning Network and has been used securely in the wild for some time.
+The Brontide system was derived from the Noise Protocol Framework.
+Noise uses Diffie-Hellman key agreement to enable Authenticated
+Encryption with Associated Data (AEAD).
+The Noise Protocol Framework was created by Trevor Perrin, one of the
+original authors of the precursors to the Signal Protocol.
+The official protocol name Brontide uses is
+
+\begin{equation*}
+\texttt{Noise\_XK\_secp256k1\_ChaChaPoly\_SHA256}.
+\end{equation*}
+
+\noindent
+Here, the \texttt{Noise\_XK} handshake specifies the initiator knows the
+responders static public key, so it is never transmitted.
+The additional requirements include the elliptic curve secp256k1, the
+AEAD method based on the ChaCha20 symmetric cipher and Poly1305
+authenticator, and the cryptographic hash function SHA256.
+We selected this type of protocol to ensure that a peer was protected
+from MitM attacks if the peer was connecting to a previously known host.
+Further, the protocol ensures data integrity without the need to depend
+on x.509 systems.
+
+\subsection{Yamux}
+
+Yamux is a robust multiplexing library built by HashiCorp.
+This lightweight TCP streaming multiplexor protocol was built to allow
+a TCP connection to be converted into an ordered full duplex
+communication channel that allows multiple logical connections to exist
+over a single TCP connection.
+This multiplexor allows gRPC to be used in our system seamlessly while
+also only requiring a single connection between peers.
+
+\subsection{gRPC}
+
+gRPC is a mature remote procedure call system originally developed at
+Google before being released to the public.
+It uses Protobuf (Protocol Buffers) for data serialization which allows
+for easy client-server communication necessary for the higher-order
+protocols.
+gRPC is used by many organizations including Netflix, Docker, and
+Spotify and has proven capable in demanding applications.
+
+\subsection{Connection Handshaking}
+
+In addition to the connection handshaking associated with Brontide,
+before any higher level protocol begins, two messages must be exchanged.
+The first message exchanges the Chain ID of each peer.
+If these values do not match, the connection is dropped.
+This has been built into this level of the protocol to prevent problems
+seen in other blockchain networks where peers attempt to sync the wrong chain.
+We chose instead to validate both peers are on the same network and
+terminate on failure as soon as possible.
+The second message communicates the port on which the remote node may
+be dialed back.
+The specific port that is passed in this location is the port on which
+the P2P protocol of a peer may be found.
+The reason this value is passed at this level is to facilitate the
+proper operation of discovery by forming a complete identity of a
+remote node.
+This identity includes the host, port, and public key of a remote
+node
+
+\subsection{Summary of Higher Order Protocols}
+
+At this time there are three higher order protocols in the
+communication stack.
+These are the BootNode protocol, the Discovery protocol, and the P2P
+protocol.
+These protocols have been divided into these classifications to allow
+differentiation of operations and security requirements.
+The BootNode protocol allows a peer who is first joining the network to
+discover peers in the overlay network using a persistent entry point.
+The Discovery protocol allows a peer to be connected to another peer
+for a single request that communicates other peers that a node may
+connect to.
+This protocol allows a node to build a peer list.
+Finally, the P2P protocol is a persistent full duplex channel between
+nodes in the P2P network.
+All protocols are based on gRPC after the initial handshake.
+
+\subsection{BootNode Protocol Summary}
+
+The BootNode protocol operates by allowing a remote host to connect to
+a persistent point of entry into the overlay P2P network.
+The bootnode servers are ignorant of the block chain and serve the
+singular purpose of allowing peering.
+These servers hold a cache of long term peers that have remained
+responsive to intermittent heartbeats over several days.
+These servers also hold an LRU cache that contains the most recently
+seen nodes up to cache eviction.
+Any node that connects to a bootnode server will make a single request
+that returns a list of peers that may be used for discovery and this
+list will contain items from both of the above mentioned caches.
+The bootnode server will terminate the connection after this single
+request is served.
+
+\subsection{Discovery Protocol Summary}
+
+The Discovery Protocol allows a node to find more peers.
+Peers are stored in one of sixteen buckets based on the first hex
+character of the public key of the peer.
+These buckets contain two sublists.
+One list stores active P2P connections while the other list stores
+known nodes from the discovery protocol requests.
+The algorithm attempts to fill the set of not connected buckets by
+dialing a random subset of peers from each bucket and requesting the
+closest known peers to a random address.
+This is similar in nature to how Kademlia operates, but not identical.
+The returned peers are added to the list of possible peers to connect
+with.
+Once a node has enough peers that it may connect to, it begins dialing
+a random peer from each bucket until a user-defined number of peers
+have been connected to using the P2P protocol.
+
+\subsection{P2P Protocol Summary}
+
+The P2P protocol allows peers to gossip information about blockchain
+state, share consensus messages, and gossip transactions.
+This protocol is, like the other protocols, based on gRPC.
+The only difference is that all connections under this protocol are
+simulated connections that have been constructed from the Yamux
+multiplexing protocol.
+This allows the peers to act as both server and client in the P2P
+network while also leveraging the robust nature of gRPC in the process.

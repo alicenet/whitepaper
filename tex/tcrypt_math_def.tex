@@ -1,0 +1,51 @@
+\subsection{Mathematical Background and Cryptographic Definitions}
+\label{ssec:math_def}
+
+We let $\G_{1}$, $\G_{2}$, and $\G_{T}$ be cyclic groups of order $q$.
+Let $g_{1}, h_{1}\in\G_{1}$ and $h_{2}\in\G_{2}$ be generators and
+require that the discrete logarithm $\dlog_{g_{1}}h_{1}$ is unknown.
+The groups we use were described in Sec.~\ref{ssec:pk_curve_specifics}.
+We let $e:\G_{1}\times\G_{2}\to\G_{T}$ be an efficiently computable
+nondegenerate bilinear pairing.
+In our case, signatures will be elements of $\G_{1}$ while
+public keys will be elements of $\G_{2}$.
+See Table~\ref{tab:helper_funcs} for additional functions
+that will be used in our algorithms.
+
+\input{tables/helper_funcs.tex}
+
+We are building a sidechain on top of Ethereum.
+All of the validators will be required to have an Ethereum
+public key.
+The DKG algorithm requires us to index the participants
+from $1$ to $n$.
+To do so, we order the participants with respect to their sorted
+Ethereum public keys.
+Our algorithm will need an open broadcast channel;
+this will take place via smart contracts on the Ethereum
+network.
+
+At times we will want to ensure
+
+\begin{equation}
+    e\parens{h_{1}^{\alpha},h_{2}} \overset{?}{=}
+    e\parens{h_{1},h_{2}^{\beta}}.
+\end{equation}
+
+\noindent
+Due to how \textsc{PairingCheck} is defined, we
+will need to check the equivalent
+
+\begin{equation}
+    e\parens{h_{1}^{\alpha},h_{2}^{-1}}\cdot
+        e\parens{h_{1},h_{2}^{\beta}}
+        \overset{?}{=} 1.
+\end{equation}
+
+\noindent
+If $h^{\alpha} = \parens{x,y}$, then
+$\parens{h^{\alpha}}^{-1} = \parens{x,-y}$; this holds for all
+elliptic curves.
+For ease of notation, we set $\bar{h} = h^{-1}$.
+It may be convenient to store both $h_{2}$ and $\bar{h}_{2}$.
+

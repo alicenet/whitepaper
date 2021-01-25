@@ -1,0 +1,43 @@
+\section{Technical Cryptography}
+\label{sec:tech_crypto}
+
+In this section we present in detail the specifics of the
+cryptography we will be using for MadNetwork.
+At times we will be verbose in our algorithmic details
+and design choices to allow for others to understand our decisions.
+
+We will begin by comparing this work with the
+Ethereum Distributed Key Generation whitepaper~\cite{ethdkg}
+in Sec.~\ref{ssec:ethdkg_comparison};
+our design is based this paper.
+Some of the implementation-specific details are covered in
+Sec.~\ref{ssec:pk_curve_specifics}.
+In Sec.~\ref{ssec:math_def}, we discuss the mathematics
+related to pairing-based cryptography; this is integral to
+our work as it is required for our group signatures.
+We describe the distributed key generation protocol in
+Sec.~\ref{ssec:dkg};
+the specific method of shared secret encryption is
+described in Sec.~\ref{ssec:secret_enc}.
+We discuss how to construct group signatures in
+Sec.~\ref{ssec:crypto_group_sig}.
+Group signatures from pairing-based cryptography require
+a hash-to-curve function, and we talk about our construction
+based on~\cite{ft2012bnhashtocurve,boneh2019h2cBLS12}
+in Sec.~\ref{ssec:hash-to-curve}.
+
+We follow~\cite{ethdkg} in our definition of
+$\parens{t,n}$-thresholded system, where we need $t+1$ actors
+for consensus.
+Unfortunately, this is different than what was used previously,
+where $\parens{t,n}$-thresholded system meant $t$ actors were
+needed to agree.
+We keep this difference for ease of comparison with the referenced paper.
+
+\input{tex/tcrypt_comparison.tex}
+\input{tex/tcrypt_spec_imp.tex}
+\input{tex/tcrypt_math_def.tex}
+\input{tex/tcrypt_dkg.tex}
+\input{tex/tcrypt_sse.tex}
+\input{tex/tcrypt_grpsig.tex}
+\input{tex/tcrypt_h2c.tex}
