@@ -1,0 +1,207 @@
+\subsection{Specific Implementation Details}
+\label{ssec:pk_curve_specifics}
+
+At this point in time, the Ethereum Virtual Machine (EVM) 
+only allows for certain elliptic curve operations to
+be performed inexpensively from precompiled contracts.
+In order to keep gas costs low, we will rely heavily 
+on these contracts.
+The precompiled contracts are
+\textsc{ECAdd}, \textsc{ECMul}, and \textsc{PairingCheck};
+see Alg.~\ref{alg:ec_algs} for specifics.
+While they have the names addition and scalar multiplication,
+we will primarily be using multiplicative notation in this whitepaper;
+the exception will be when we talk about hash-to-curve algorithms
+in Sec.~\ref{ssec:hash-to-curve}.
+Furthermore, we may not explicitly reference \textsc{ECAdd}
+and \textsc{ECMul} when using them in our algorithms
+for space considerations, although we will use comments to make
+this clear.
+
+\input{algs/ec_algs.tex}
+
+We require elliptic curves with pairing-based cryptography.
+The source code for curve \texttt{bn256} is implemented
+for Ethereum here\footnote{
+\url{https://github.com/ethereum/go-ethereum/tree/master/crypto/bn256/cloudflare}
+}.
+This code implements the Optimal Ate pairing from~\cite{naehrig2010new} and
+is based on Barreto-Naehrig curves~\cite{bnCurves},
+a family of pairing-friendly curves.
+A more recent version of Cloudflare's library can be found here\footnote{
+\url{https://github.com/cloudflare/bn256}}.
+Cloudflare's version includes a hash-to-curve function
+based on~\cite{ft2012bnhashtocurve}, which is the same paper we base our
+hash function on.
+Unfortunately, the newer version uses a different prime;
+the Ethereum library uses a 254-bit prime while the current Cloudflare
+library uses a 256-bit prime.
+We modified the Ethereum code
+and included functions for computing modular square roots as
+well as a hash-to-curve algorithm.
+We plan to make these updates available to others, as they will
+be useful whenever cryptographic signatures are used.
+Our code includes an implementation for the hash-to-curve algorithms
+described in~\cite{ft2012bnhashtocurve}; see Sec.~\ref{ssec:hash-to-curve}.
+
+The underlying field operations perform arithmetic modulo a prime number.
+This can be difficult to perform quickly~\cite[Chapter 14]{hac1996}.
+The \texttt{bn256} library uses Montgomery
+encoding~\cite{montgomery1985modular} for efficiency;
+we will give an overview here although one reference
+is~\cite[Chapter 14.3.2]{hac1996}.
+The primary advantage of using the Montgomery encoding is that
+modular multiplication requires only multiplication with a potential
+subtraction; in particular, it does not require division.
+
+If we want to perform multiplication modulo $p$, let $R>p$ such
+that $\gcd(R,p) = 1$ and it is convenient to perform modular arithmetic
+with respect to $R$.
+Given $x\in\Z_{p}$, the Montgomery encoding of $x$ is
+
+\begin{equation}
+    \tilde{x} \equiv xR \mod p.
+\end{equation}
+
+\noindent
+Given two encoded values $\tilde{a}$ and $\tilde{b}$,
+Montgomery multiplication allows us to compute $\widetilde{ab}$:
+
+\begin{equation}
+    \widetilde{ab} = \tilde{a}\tilde{b}R^{-1} \mod p.
+\end{equation}
+
+\noindent
+Here, $R^{-1}R = 1 \mod p$, so $R^{-1}$ is the multiplicative
+inverse of $R$ with respect to $p$.
+An efficient implementation of Montgomery multiplication
+allows us to use it both for encoding and decoding,
+and this is what the \texttt{bn256} library does.
+
+We now look at the elliptic curves in the pairing-based cryptography.
+Specifically, we have the elliptic curve $E/\F_{p}$ where
+
+\begin{equation}
+    E : y^{2} = x^{3} + ax + b
+\end{equation}
+
+\noindent
+and constants
+
+\begin{align}
+    p &= \texttt{30644E72 E131A029 B85045B6 8181585D 97816A91 6871CA8D 3C208C16
+                D87CFD47} \nonumber\\
+        &= 36u^{4} + 36u^{3} + 24u^{2} + 6u + 1 \nonumber\\
+    q &= \texttt{30644E72 E131A029 B85045B6 8181585D 2833E848 79B97091 43E1F593
+                F0000001} \nonumber\\
+        &= 36u^{4} + 36u^{3} + 18u^{2} + 6u + 1 \nonumber\\
+    u &= 4965661367192848881 \nonumber\\
+    a &= 0 \nonumber\\
+    b &= 3 \nonumber\\
+    g_{1} &= \parens{1,2} \nonumber\\
+    h_{1} &= \parens{h_{1,x}, h_{1,y}} \nonumber\\
+    h_{1,x} &= \texttt{081D36DE F693881E DFC5614E AE25BB5C 228A7142 A36EE533 47B09434 1D541F2C} \nonumber\\
+    h_{1,y} &= \texttt{2CD20C36 14D407F3 39B9BB25 EF23979C D2EE1E45 310EB0C5 023A3F5F D52D8B11}
+\end{align}
+
+\noindent
+From here, we see $p = 3 \mod 4$ and $p = 1 \mod 6$.
+If $E(\F_{p})$ is the group of points on $E/\F_{p}$
+acting under addition, then $E(\F_{p}) = \angles{g_{1}}$
+and $\abs{E(\F_{p})} = q$; here, $g_{1}$ the standard generator.
+From the construction of BN curves, $q$ is prime,
+which implies that any nontrivial element of $\G_{1}$ is a generator.
+During the distributed key generation protocol, we will
+need another generator $h_{1}$ for $E(\F_{p})$ such that
+$\dlog_{g_{1}}h_{1}$ is unknown, which ensures no one
+is able to bias the underlying probability distribution
+of the master public key.
+Here, we set
+
+\begin{equation}
+    h_{1} = \textsc{HashToG1}(\texttt{[]byte("MadHive Rocks!")}),
+\end{equation}
+
+\noindent
+where $\textsc{HashToG1}$ is the hash-to-curve function
+from Alg.~\ref{alg:hash-to-G1} developed in
+Sec.~\ref{ssec:hash-to-curve}.
+In the future $h_{1}$ may change on each iteration of the DKG
+protocol, but it is constant at this point.
+
+
+We let $e:\G_{1}\times\G_{2}\to\G_{T}$ be our nondegenerate
+bilinear map over groups $\G_{1}$, $\G_{2}$, and $\G_{T}$.
+We let $\G_{1} = E(\F_{p})$, $\G_{2}\subseteq E(\F_{p^{12}})$,
+and $\G_{T}\subseteq \F_{p^{12}}^{*}$;
+$e$ is the Optimal Ate pairing~\cite{bnCurves}.
+By design, we have $\abs{\G_{1}} = \abs{\G_{2}} = \abs{\G_{T}} = q$.
+For efficient implementation, we will need to look at the twist
+curve $E'/\F_{p^{2}}$ where
+
+\begin{equation}
+    E' : y^{2} = x^{3} + b'.
+\end{equation}
+
+\noindent
+In this case, $b' = b/\xi$ and the specific choice of
+$\xi\in\F_{p^{2}}^{*}$ will be discussed below.
+We then define
+
+\begin{align}
+    &\psi:E'(\F_{p}^{2})\to E(\F_{p}^{12}) \nonumber\\
+    &\parens{x',y'} \mapsto \parens{z^{2}x',z^{3}y'},
+\end{align}
+
+\noindent
+and we see that $\psi$ is an injective group homomorphism.
+Here, we use the definition
+$\F_{p^{12}} \equiv \F_{p^{2}}\brackets{X}/\parens{X^{6}-\xi}$,
+where $\xi\in\F_{p^{2}}$ is a nonsquare noncube
+and $z\in\F_{p^{12}}$ is one of the roots of $X^{6}-\xi$.
+That $\xi\in\F_{p^{2}}^{*}$ exists follows from
+the fact $p = 1\mod 6$; for more information
+see~\cite[Lemma 1]{bnCurves}.
+It is this homomorphism $\psi$  which allows for efficient
+computation, because this allows most of our arithmetic operations
+to occur in $\F_{p}$ and $\F_{p^{2}}$;
+in particular, signatures are elements of $E(\F_{p})$
+and we represent public keys as elements of $E'(\F_{p^{2}})$.
+The only time arithmetic in $\F_{p^{12}}$ is required is when
+we compute the Optimal Ate pairing.
+
+We now discuss the specific parameters for the twist curve $E'$:
+
+\begin{align}
+    \xi &= i + 9 \nonumber\\
+    h_{2,x,i} &= \texttt{198E9393 920D483A 7260BFB7 31FB5D25 F1AA4933 35A9E712 97E485B7 AEF312C2} \nonumber\\
+    h_{2,x} &= \texttt{1800DEEF 121F1E76 426A0066 5E5C4479 674322D4 F75EDADD 46DEBD5C D992F6ED} \nonumber\\
+    h_{2,y,i} &= \texttt{090689D0 585FF075 EC9E99AD 690C3395 BC4B3133 70B38EF3 55ACDADC D122975B} \nonumber\\
+    h_{2,y} &= \texttt{12C85EA5 DB8C6DEB 4AAB7180 8DCB408F E3D1E769 0C43D37B 4CE6CC01 66FA7DAA} \nonumber\\
+    h_{2} &= \parens{h_{2,x,i}i + h_{2,x}, h_{2,y,i}i + h_{2,h}}.
+\end{align}
+
+\noindent
+The values of $\xi$ and $h_{2}$ are from the \texttt{bn256}
+implementation used in Ethereum.
+We specify the $i$ component before the non-$i$ component
+following the library convention.
+
+For BN curves like the one we are using, there is no known
+efficiently computable isomorphism
+$\vphi:\G_{2}\to\G_{1}$~\cite[Chap 2.2.7]{rass2013cryptography},
+which makes our setting Type 3~\cite{EfficienySecurity2010}.
+
+As noted in the Cloudflare \texttt{bn256} source code repository,
+the original implementation had approximately 128 bits of security,
+but this has been reduced due to recent work~\cite{exTNFS}.
+The exact security level has been discussed
+here~\cite{MSSsecurity,BDkeysizes}, with~\cite{BDkeysizes} listing the
+security level at 100 bits.
+While this is below the desired 128-bit level, it is believed
+to be currently out of reach.
+Even so, with this in mind we take precautions by enforcing
+regular key rotation in order to ensure the security of the system.
+The decrease in security is partially mitigated by the fact that
+validators use the Ethereum private key to sign messages
+throughout the consensus algorithm.

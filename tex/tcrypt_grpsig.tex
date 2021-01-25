@@ -1,0 +1,458 @@
+\subsection{Group Signatures}
+\label{ssec:crypto_group_sig}
+
+\subsubsection{Constructing the Master Public Key}
+
+The goal of our consensus algorithm is to enable a Byzantine-fault
+tolerant subgroup to cryptographically sign on behalf of the entire
+group without requiring every individual group member to sign.
+This is enabled by signature aggregation in the appropriate way.
+
+We let $\mathcal{Q}$ be the collection of qualified
+actors who correctly shared their secrets and
+$\mathcal{R}\subseteq\mathcal{Q}$ such that
+$\abs{\mathcal{R}} = t+1$; thus, $\mathcal{R}$ is a
+Byzantine-fault tolerant subgroup.
+As discussed in~\cite{gennaro3revisiting,gennaro1999secure,ethdkg},
+in order to ensure that no bad actors gain any information
+about the master public key and not be able to change
+its underlying probability distribution, we require
+$h_{1}\in\G_{1}$ such that $\dlog_{g_{1}}h_{1}$ is unknown.
+We also let $h_{2}\in\G_{2}$ be a generator.
+
+The individual shared secrets $s_{i}$ allow us to define the
+\emph{master secret key} $\text{msk}$:
+
+\begin{equation}
+    \text{msk} = \sum_{P_{i}\in\mathcal{Q}} s_{i}.
+\end{equation}
+
+\noindent
+This gives us the \emph{master public key} $\text{mpk}$:
+
+\begin{align}
+    \text{mpk} &= h_{2}^{\text{msk}} \nonumber\\
+        &= \prod_{P_{i}\in\mathcal{Q}} h_{2}^{s_{i}}.
+\end{align}
+
+\noindent
+Because everyone in $\mathcal{Q}$ correctly shared his secret,
+a Byzantine-fault tolerant subgroup $\mathcal{R}$ can
+correctly obtain the secret $s_{i}$ via Lagrange interpolation:
+
+\begin{align}
+    s_{i} &= \sum_{P_{j}\in\mathcal{R}} s_{i\to j} R_{j} \nonumber\\
+    R_{j} &= \prod_{\substack{P_{k}\in\mathcal{R} \\ k\ne j}} \frac{k}{k-j}.
+    \label{eq:Rj_coefs}
+\end{align}
+
+\noindent
+This would allow us to recover the secret $s_{i}$ should $P_{i}$
+fail to share $h_{1}^{s_{i}}$ below; however,
+we take a stricter response and would view failure to share
+as malicious activity leading to stake slashing.
+
+We now proceed to compute $\text{mpk}$.
+Let
+
+\begin{equation}
+    \pi(h_{1}^{s_{i}}) = \textsc{DLEQ}(
+        g_{1},g_{1}^{s_{i}},h_{1},h_{1}^{s_{i}},s_{i})
+\end{equation}
+
+\noindent
+be the zk-proof that $h_{1}^{s_{i}}$ is $P_{i}$'s portion
+of the master public key (technically part of $\text{mpk}^{*}$
+as defined below).
+Because $C_{i0} = g_{1}^{s_{i}}$ is public knowledge
+and $P_{i}$ correctly shared his secret $s_{i}$, it is possible
+to publicly verify $h_{1}^{s_{i}}$.
+Additionally, $P_{i}$ will publish $h_{2}^{s_{i}}$ so that
+we can ensure
+
+\begin{equation}
+    \textsc{PairingCheck}(h_{1}^{s_{i}},\bar{h}_{2},h_{1},h_{2}^{s_{i}})
+        = 1.
+\end{equation}
+
+\noindent
+This will be called by a smart contract.
+Thus, failure of $P_{i}$ to publish $h_{1}^{s_{i}}$,
+a valid proof $\pi(h_{1}^{s_{i}})$, and the corresponding
+$h_{2}^{s_{i}}$ amounts to misbehavior which will
+lead to a fine.
+
+The Ethereum smart contract will store $h_{1}^{s_{i}}$ from
+all participants and broadcast
+$h_{1}^{s_{i}}$, $\pi(h_{1}^{s_{i}})$, and $h_{2}^{s_{i}}$.
+From here, any participant will be able to submit
+
+\begin{equation}
+    \text{mpk} = \prod_{P_{i}\in\mathcal{Q}} h_{2}^{s_{i}}
+\end{equation}
+
+\noindent
+to the smart contract.
+Because $\braces{h_{1}^{s_{i}}}_{i\in\mathcal{Q}}$ are stored
+and valid, the contract can construct
+
+\begin{equation}
+    \text{mpk}^{*} = \prod_{P_{i}\in\mathcal{Q}} h_{1}^{s_{i}}
+    \label{eq:mpk_dual}
+\end{equation}
+
+\noindent
+and call
+
+\begin{equation}
+    \textsc{PairingCheck}(\text{mpk}^{*},\bar{h}_{2},h_{1},\text{mpk})
+\end{equation}
+
+\noindent
+to ensure $\text{mpk}$ is valid.
+The master public key can then be stored publicly and used
+for group signature verification.
+
+
+
+\subsubsection{Constructing Group Signatures}
+
+At this point, we have successfully constructed the master public
+key $\text{mpk}$ for $\mathcal{Q}$ and distributed
+the master secret key $\text{msk}$ among the members of $\mathcal{Q}$.
+We now turn our attention to constructing group
+signatures from partial signatures.
+
+Each participant $P_{j}\in\mathcal{Q}$ has a portion of the
+master secret key; this is portion is called the \emph{group secret
+key}:
+
+\begin{equation}
+    \gsk_{j} = \sum_{P_{i}\in\mathcal{Q}} s_{i\to j}.
+\end{equation}
+
+\noindent
+This is possible because we proved that every participant
+in $\mathcal{Q}$ correctly shared his secret share.
+We note that that $s_{j\to j}$ is included in the sum for
+$\gsk_{j}$ even though the encrypted form was not publicly shared.
+Naturally, there is the corresponding \emph{group public key}:
+
+\begin{equation}
+    \gpk_{j} = h_{2}^{\gsk_{j}}.
+\end{equation}
+
+\noindent
+Here, $\gpk_{j}$ is $P_{j}$'s portion of the master public key
+and will be broadcast to all users.
+Cryptographic proof that $\gpk_{j}$ is valid will be discussed
+in the next section.
+
+The threshold property along with the previous definitions give
+us the following result:
+
+\begin{equation}
+    \text{msk} = \sum_{P_{j}\in\mathcal{R}} \gsk_{j}R_{j}.
+\end{equation}
+
+\noindent
+These $R_{j}$ factors only depend on $\mathcal{R}$.
+It follows that
+
+\begin{equation}
+    \text{mpk} = \prod_{P_{j}\in\mathcal{R}} \gpk_{j}^{R_{j}}.
+\end{equation}
+
+\noindent
+This will allow partial signatures to be combined into a valid
+group signature.
+
+We now assume that $\mathcal{Q}$ wants to sign message $M$.
+We let $H_{2C}(M)\in\G_{1}$ be the result of a hash-to-curve algorithm;
+these will be discussed in Sec.~\ref{ssec:hash-to-curve}.
+In this case, participant $P_{j}\in\mathcal{R}$ computes the
+partial signature
+
+\begin{equation}
+    \sigma_{j} = \brackets{H_{2C}(M)}^{\gsk_{j}}.
+\end{equation}
+
+\noindent
+For security, we should confirm
+
+\begin{equation}
+    \textsc{PairingCheck}(\sigma_{j},\bar{h}_{2},H_{2C}(M),\gpk_{j}) = 1
+\end{equation}
+
+\noindent
+to ensure we have a valid signature.
+If $\gpk_{j}$ is stored and we can call the hash-to-curve function $H_{2C}$,
+then the only inputs will be the message $M$
+and signature $\sigma_{j}$.
+
+It is easy to compute the group signature from the partial signatures:
+
+\begin{equation}
+    \sigma = \prod_{P_{j}\in\mathcal{R}} \sigma_{j}^{R_{j}}.
+\end{equation}
+
+\noindent
+The $R_{j}$ constants are defined in Eq.~\eqref{eq:Rj_coefs};
+as mentioned above, the $R_{j}$ depend upon $\mathcal{R}$
+and can be computed by anyone.
+Because $\sigma_{j}\in\G_{1}$, signature aggregation could be carried
+out by the EVM if desired; the gas cost would come from calls to
+\textsc{ECAdd}, \textsc{ECMul}, and modular exponentiation,
+but this would be expensive.
+We now prove this is the signature corresponding to the master public key:
+
+\begin{align}
+    e(\sigma, h_{2})
+        &= \prod_{P_{j}\in\mathcal{R}}
+            e\parens{\sigma_{j}^{R_{j}},h_{2}}
+            \nonumber\\
+        &= \prod_{P_{j}\in\mathcal{R}}
+            e\parens{\brackets{H_{2C}(M)}^{\text{gsk}_{j}},h_{2}^{R_{j}}}
+            \nonumber\\
+        &= \prod_{P_{j}\in\mathcal{R}} e\parens{H_{2C}(M),
+                \brackets{h_{2}^{\text{gsk}_{j}}}^{R_{j}}} \nonumber\\
+        &= e(H_{2C}(M),\text{mpk}).
+\end{align}
+
+\noindent
+It follows that
+
+\begin{equation}
+    \textsc{PairingCheck}(\sigma,\bar{h}_{2},H_{2C}(M),\text{mpk}) = 1.
+\end{equation}
+
+\noindent
+This allows every member of $\mathcal{R}$ to compute the signature
+for the entire group while not requiring anyone to share his
+signing key.
+This is of utmost importance for security.
+
+
+
+\subsubsection{Malicious Group Public Key Shares}
+
+We now look at how to ensure the broadcast value of
+$\gpk_{j}$ is valid.
+
+Along with the $P_{j}$'s group public key $\gpk_{j}\in\G_{2}$,
+there is the corresponding version in $\G_{1}$:
+
+\begin{equation}
+    \gpk_{j}^{*} = g_{1}^{\gsk_{j}}.
+\end{equation}
+
+\noindent
+Note the base is $g_{1}$ and not $h_{1}$ as in the case of $\text{mpk}^{*}$
+in Eq.~\eqref{eq:mpk_dual}.
+Participant $P_{j}$ will publish a signature $\sigma_{j}$ of a predetermined
+message $M$ for security purposes.
+An initial check will ensure
+
+\begin{equation}
+    \textsc{PairingCheck}(\sigma_{j},\bar{h}_{2},H_{2C}(M),\gpk_{j}) = 1;
+\end{equation}
+
+\noindent
+any validator who provides an invalid signature
+is clearly malicious.
+
+Because $P_{j}$ correctly shared his secret, $\gpk_{j}^{*}$
+is public knowledge, as
+
+\begin{equation}
+    \gpk_{j}^{*} = \prod_{P_{i}\in\mathcal{Q}}F_{i}(j).
+    \label{eq:gpkj_star_def}
+\end{equation}
+
+\noindent
+Thus, it could be reconstructed inside a smart contract.
+From there, we will ensure
+
+\begin{equation}
+    \textsc{PairingCheck}(\gpk_{j}^{*},\bar{h}_{2},g_{1},\gpk_{j}) = 1.
+\end{equation}
+
+\noindent
+Requiring submission of $\gpk_{j}^{*}$ and the associated
+proof could be required at the time of submission.
+This would be costly, though, and will instead allow
+the other participants to prove malicious behavior.
+We would prefer the entire process to be as inexpensive
+as possible should there be no malicious actors.
+
+It will be expensive to carry out this proof of malicious action.
+The reason is that in order to compute $\gpk_{j}^{*}$,
+the message containing the shared secrets and public coefficients
+from every participant will need to be entered into a smart contract
+in order to obtain the right hand side of
+Eq.~\eqref{eq:gpkj_star_def}.
+Because of this, there is another, cheaper way to prove malicious
+behavior provided a Byzantine-fault tolerant group
+correctly submits $\gpk_{j}$ with valid signatures $\sigma_{j}$
+and we discuss this now.
+
+First, a participant can go through all possible subgroups
+$\mathcal{R}\subseteq\mathcal{Q}$ searching for a subset
+whose signatures can be combined to form a valid
+group signature.
+Once a valid subset $\mathcal{R}$ is found,
+we can then choose $P_{i}\in\mathcal{Q}\setminus\mathcal{R}$
+in order to determine if
+$\braces{P_{i}}\cup\parens{\mathcal{R}\setminus \braces{P_{v}}}$
+can form a valid signature;
+if it does not, then $P_{i}$ is malicious.
+Here $P_{v}\in\mathcal{R}$ is a fixed.
+In this case, two lists of participants would be entered into a smart
+contract: a list of valid participants followed by a list of
+invalid participants.
+It is straightforward to show the list of valid
+participants form a valid group signature.
+From there, malicious participant's signatures are included 
+one at a time to show that they form invalid signatures,
+giving cryptographic proof of malicious behavior.
+Naturally, it would be a malicious action if false participant
+lists were submitted.
+
+We now look at the costs of both methods.
+The major costs will be calling the precompiled contracts
+\textsc{ECAdd}, \textsc{ECMul}, \textsc{PairingCheck},
+and \textsc{ModExp} (modular exponentiation);
+see Table~\ref{tab:evm_gas_cost} for the specific gas costs.
+Note that the cost for \textsc{PairingCheck} comes
+from our assumption that we are testing 2 pairings,
+while the cost for \textsc{ModExp} comes from the fact
+that all of our arguments are 256-bit (32-byte) unsigned integers.
+These costs come from EIP-198\footnote{
+    \url{https://github.com/ethereum/EIPs/blob/master/EIPS/eip-198.md}}
+and EIP-1108\footnote{
+    \url{https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1108.md}}.
+
+\input{tables/evm_cost.tex}
+
+We begin with the standard method.
+First, to compute $\gpk_{j}^{*}$, we must compute $F_{i}(j)$:
+
+\begin{equation}
+    F_{i}(j) = C_{i0}C_{i1}^{j}C_{i2}^{j^{2}}\cdots C_{it}^{j^{t}}.
+\end{equation}
+
+\noindent
+The cost of computing $F_{i}(j)$ is dominated by $t$ calls to \textsc{ECMul}.
+This will be done for each element in $\mathcal{Q}$, so the
+main computation is $nt$ calls to \textsc{ECMul} in addition
+to a call to \textsc{PairingCheck}.
+Thus, we see
+
+\begin{equation}
+    \text{Cost of Standard Proof} \sim 113000 + 4000n^{2}.
+\end{equation}
+
+\noindent
+For $n=20$, this corresponds to $1.7$M gas; the gas limit
+is 10M.
+
+We now look at the cost of the group method.
+We will ignore the initial cost of ensuring a valid group signature
+from $\mathcal{R}$.
+The computation consists of forming
+
+\begin{equation}
+    \sigma = \prod_{P_{j}\in\mathcal{R}^{*}_{k}} \sigma_{j}^{R_{j}},
+\end{equation}
+
+\noindent
+where
+
+\begin{equation}
+    \mathcal{R}^{*}_{k} = \parens{\mathcal{R}\setminus P_{v}}\cup
+        \braces{P_{k}}
+\end{equation}
+
+\noindent
+for $P_{v}\in\mathcal{R}$ fixed and $P_{k}\in\mathcal{I}$,
+the set of participants who incorrectly shared $\gpk_{j}$.
+From there, we would call
+
+\begin{equation}
+    \textsc{PairingCheck}(\sigma, \bar{h}_{2}, H_{2C}(M), \text{mpk})
+\end{equation}
+
+\noindent
+to ensure that this is an invalid signature,
+and the initial check confirming $\mathcal{R}$ forms a valid
+signature implies that $P_{k}$ is malicious.
+
+Each group signature $\sigma$ will require forming $R_{j}$
+and computing $\sigma_{j}^{R_{j}}$.
+After computing $R_{j}$, we require one \textsc{ECMul} call
+to compute $\sigma_{j}^{R_{j}}$.
+The expensive part turns out to be forming $R_{j}$,
+and we focus on its straightforward computation.
+We recall from Eq.~\eqref{eq:Rj_coefs} that
+
+\begin{equation}
+    R_{j} = \prod_{\substack{P_{k}\in\mathcal{R} \\ k\ne j}} \frac{k}{k-j}.
+\end{equation}
+
+\noindent
+Naively, we would need to compute $t$ finite field inversions,
+which corresponds to $t$ \textsc{ModExp} calls, to compute
+$R_{j}$.
+This must be performed $t+1$ times to form $\sigma$;
+we must also call \textsc{ECMul} $t+1$ times but this is
+negligible.
+Finally, we must call
+
+\begin{equation}
+    \textsc{PairingCheck}(\sigma, \bar{h}_{2}, H_{2C}(M), \text{mpk});
+\end{equation}
+
+\noindent
+this call must fail for invalid signatures.
+Thus, we have
+
+\begin{equation}
+    \text{Cost of Naive Group Proof} \sim 113000 + 5800n^{2}.
+\end{equation}
+
+\noindent
+For $n=20$, this corresponds to $2.4$M gas.
+This is more expensive than the previous version, but we can
+do better.
+
+The main cost comes from the finite field inversions, which require
+a call to \textsc{ModExp}.
+To fix this, we precompute these inverses and include them
+in the function call.
+At the beginning of the call, we check to make sure that the submitted
+inverses are valid; if they are valid, we proceed with the
+accusation, and if they are invalid, we stop.
+Everything else is the same as before;
+see Alg.~\ref{alg:grpsig_malicious} for the complete description.
+For each accusation, the main cost is $t+1$ \textsc{ECMul} calls
+as well as one pairing check.
+Now, these same computations must be included for the initial
+check of a valid group signature, but we will ignore that for now.
+Thus, we have the cost to prove malicious action for one participant:
+
+\begin{equation}
+    \text{Cost of Efficient Group Proof} \sim 113000 + 4000n.
+\end{equation}
+
+\noindent
+For $n=20$, this corresponds to $200$K gas.
+This is more efficient than computing $\gpk_{j}^{*}$ via smart contract.
+
+Due to the costs, validators would always prefer to use the group
+method over submitting all of the sent messages.
+Even so, submitting all messages will always work, while in the group
+setting we require a Byzantine-fault tolerant set of honest
+validators.
+
+\input{algs/gpkj_algs.tex}
+

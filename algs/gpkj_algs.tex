@@ -1,0 +1,108 @@
+\begin{algorithm}[p]
+\caption{Accusation against malicious $\gpk_{j}$ shares using
+    group signatures.}
+\label{alg:grpsig_malicious}
+\begin{algorithmic}[1]
+\Function{GrpAccGPKj}{$\textsc{invArray}$, $\textsc{honestIndices}$,
+        $\textsc{dishonestIndices}$}
+    \If{$\textsc{Length}(\textsc{honestIndices}) < t+1$}
+        \State \Return
+        \Comment{Require $t+1$ validators to make a valid signature}
+    \EndIf
+    \State \texttt{validInvs} = \textsc{CheckInverses}(\textsc{invArray})
+    \If{$\texttt{validInvs} \ne \texttt{true}$}
+        \State \Return
+        \Comment{Did not submit valid multiplicative inverses}
+    \EndIf
+    \State $\textsc{IndexArray} = \textsc{honestIndices}[0:t+1]$
+    \Comment{Include first $t+1$ participants}
+    \State $\sigma = \textsc{AggregateSignatures}(\textsc{IndexArray})$
+    \State $\texttt{validSig} = \textsc{PairingCheck}(\sigma, \bar{h}_{2},
+        H_{2C}(M), \text{mpk})$
+    \If{$\texttt{validSig} \ne \texttt{true}$}
+        \State \Return
+        \Comment{\textsc{honestIndices} do not form a valid group signature}
+    \EndIf
+    \For{$i=0$; $i < \textsc{Length}(\textsc{dishonestIndices})$; $i$++}
+        \State $\textsc{IndexArray}[t]
+            = \textsc{dishonestIndices}[i]$
+        \State $\sigma = \textsc{AggregateSignatures}(\textsc{IndexArray})$
+        \State $\texttt{validSig} = \textsc{PairingCheck}(\sigma, \bar{h}_{2},
+            H_{2C}(M), \text{mpk})$
+        \If{$\texttt{validSig} \ne \texttt{false}$}
+            \State \Return
+            \Comment{$\textsc{dishonestIndices}[i]$ submitted valid
+                signature}
+        \EndIf
+    \EndFor
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{Determine if submitted inverses are correct}
+\label{alg:grpsig_mal_Rj}
+\begin{algorithmic}[1]
+\Function{CheckInverses}{\textsc{invArray}}
+    \State \texttt{validInvs} = \texttt{true}
+    \Comment{Assuming the form $\brackets{1^{-1}, 2^{-1}, \cdots, (n-1)^{-1}}$}
+    \For{$i=0$; $i < \textsc{Length}(\textsc{invArray})$; $i$++}
+        \State $k = i+1$
+        \State $k_{\text{inv}} = \textsc{invArray}[i]$
+        \State $r = k_{\text{inv}}\cdot k \mod q$
+        \If{$r\ne1$}
+            \State \texttt{validInvs} = \texttt{false}
+            \State \textbf{break}
+        \EndIf
+    \EndFor
+    \State \Return \texttt{validInvs}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{Compute group signature}
+\label{alg:compute_grpsig}
+\begin{algorithmic}[1]
+\Function{AggregateSignatures}{\textsc{IndexArray}, \textsc{invArray}}
+    \State $\sigma = \textsc{Identity}$
+    \Comment{Set to identity element of $\G_{1}$}
+    \For{$\texttt{idx} = 0$; $\texttt{idx} < t+1$; $\texttt{idx}$++}
+        \State $j = \textsc{IndexArray}[\texttt{idx}]$
+        \State $R_{j} = \textsc{ComputeRj}(j, \textsc{IndexArray},
+            \textsc{invArray})$
+        \State $t = \textsc{ECMul}(\sigma_{j}, R_{j})$
+        \Comment{$\sigma_{j}$ is $j$'s stored signature}
+        \State $\sigma = \textsc{ECAdd}(\sigma,t)$
+    \EndFor
+    \State \Return $\sigma$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{Compute $R_{j}$ for group signature}
+\label{alg:grpsig_compute_Rj}
+\begin{algorithmic}[1]
+\Function{ComputeRj}{$j$, \textsc{IndexArray}, \textsc{invArray}}
+    \State $R_{j} = 1$
+    \For{$\texttt{idx}=0$; $\texttt{idx}<\textsc{Length}(\textsc{IndexArray})$;
+            $\texttt{idx}$++}
+        \State $k = \textsc{IndexArray}[\texttt{idx}]$
+        \State $t = k$
+        \If{$k = j$}
+            \State \textbf{continue}
+        \ElsIf{$k > j$}
+            \State $\alpha = k - j$
+        \Else
+            \State $t = (-1)\cdot t \mod q$
+            \State $\alpha = j - k$
+        \EndIf
+        \State $t_{\text{inv}} = \textsc{invArray}[\alpha-1]$
+        \State $t = t\cdot t_{\text{inv}} \mod q$
+        \State $R_{j} = R_{j}\cdot t \mod q$
+    \EndFor
+    \State \Return $R_{j}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}

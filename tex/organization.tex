@@ -1,0 +1,33 @@
+\section{Paper Organization}
+
+This paper has been organized as a bottom up approach to the formation
+of our system.
+We have elected to explain the operation in this way because the system
+has been engineered to be largely ignorant of the operations at layers
+above and below a given primitive.
+Thus, our system allows application logic to change while preserving
+the consensus mechanisms.
+The system also allows the consensus mechanism to be changed while
+preserving the application logic.
+Due to this design, the system is most easily digested by building it
+in layers of complexity.
+
+The first sections pertain to the encoding of messages within the
+system.
+The next section addresses the operation of transaction processing.
+The section following gives insight into the synchronization and how
+history may be safely pruned from the system.
+Following these sections the consensus algorithm itself is covered in
+full detail.
+The networking stack is then addressed to describe the communication
+between nodes, based on the consensus algorithm.
+Finally, the economics of the system are covered.
+
+The treatment of these topics is not performed in a technical manner in
+the body of the paper proper, aside from the proof of the consensus
+algorithm.
+This choice was made because the consensus proof is far less technical
+than the cryptography of the system, and may be understood by the
+intended audience of this paper.
+The formal treatment of cryptographic operation has been performed in
+the technical addendum of this paper; see Appendix~\ref{sec:tech_crypto}.

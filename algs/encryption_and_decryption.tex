@@ -1,0 +1,46 @@
+\begin{algorithm}[t]
+\caption{Encryption and decryption functions}
+\label{alg:enc_dec}
+\begin{algorithmic}[1]
+\Function{Encrypt}{$\sk$,$\pk$,$j$,$s$}
+    \Comment{Encrypt secret $s$ to participant $j$;
+        $\pk$ is $j$'s public key}
+    \State $k = \pk^{\sk}$
+    \Comment{k is the shared secret}
+    \State $\texttt{kX}  = \texttt{u2b}(k_{x})$
+    \Comment{Convert $x$ coordinate of shared secret to bytes}
+    \State $\texttt{j}   = \texttt{u2b}(j)$
+    \State $\texttt{s}   = \texttt{u2b}(s)$
+    \State $\texttt{HKj} = H(\texttt{kX} || \texttt{j})$
+    \State $\overline{\texttt{s}} = \texttt{s} \oplus \texttt{HKj}$
+    \State \Return $\overline{\texttt{s}}$
+\EndFunction
+
+\State
+\Function{Decrypt}{$\sk$,$\pk$,$j$,$\overline{\texttt{s}}$}
+    \Comment{Decrypt secret $\overline{\texttt{s}}$ to participant $j$;
+        $\sk$ is $j$'s secret key}
+    \State $k = \pk^{\sk}$
+    \Comment{k is the shared secret}
+    \State $\texttt{xK}  = \texttt{u2b}(k_{x})$
+    \Comment{Convert $x$ coordinate of shared secret to bytes}
+    \State $\texttt{j}   = \texttt{u2b}(j)$
+    \State $\texttt{HKj} = H(\texttt{kX} || \texttt{j})$
+    \State $\texttt{s}   = \overline{\texttt{s}} \oplus \texttt{HKj}$
+    \State $s            = \texttt{b2u}(\texttt{s})$
+    \State \Return $s$
+\EndFunction
+
+\State
+\Function{DecryptSS}{$k$,$j$,$\overline{\texttt{s}}$}
+    \Comment{Decrypt secret $\overline{\texttt{s}}$ to participant $j$}
+    \State $\texttt{kX}  = \texttt{u2b}(k_{x})$
+    \Comment{Convert $x$ coordinate of shared secret to bytes}
+    \State $\texttt{j}   = \texttt{u2b}(j)$
+    \State $\texttt{HKj} = H(\texttt{kX} || \texttt{j})$
+    \State $\texttt{s}   = \overline{\texttt{s}} \oplus \texttt{HKj}$
+    \State $s            = \texttt{b2u}(\texttt{s})$
+    \State \Return $s$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}

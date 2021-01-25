@@ -1,0 +1,21 @@
+\section{StateTrie}
+
+The StateTrie is a Compact Sparse Merkle Trie that tracks two types of
+information.
+First, the StateTrie immutably tracks all deposits that have been spent in an
+append only manner.
+These deposits are stored at the location of their UTXOID with a value that is
+equal to the hash of the UTXOID itself.
+The presence of such an object in the StateTrie implies that a deposit has been
+spent.
+The existence of a deposit that is valid for consumption is determined by the
+Deposit smart contract on the Ethereum Blockchain.
+
+The second piece of information the StateTrie tracks is the total set of all
+unspent UTXO objects at a given height.
+For every UTXO that exists in the blockchain, there is a single entry in the
+StateTrie.
+This entry is stored at the key that is equal to the UTXOID of the UTXO and the
+value is the hash of the UTXO object.
+When a UTXO is spent, the associated key value pair is removed from the current
+trie.

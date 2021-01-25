@@ -1,0 +1,74 @@
+\begin{algorithm}[tp]
+\caption{Hash to $\G_{1}$}
+\label{alg:hash-to-G1}
+\begin{algorithmic}[1]
+\Function{HashToG1}{$\texttt{m}$}
+\Comment{Hash-to-G1 algorithm for BN curves}
+    \State $t_{0} = \textsc{HashToBase}(\texttt{m},\texttt{0x00},\texttt{0x01})$
+    \State $t_{1} = \textsc{HashToBase}(\texttt{m},\texttt{0x02},\texttt{0x03})$
+    \State $h_{0} = \textsc{BaseToG1}(t_{0})$
+    \State $h_{1} = \textsc{BaseToG1}(t_{1})$
+    \State $h = \textsc{ECAdd}(h_{0},h_{1})$
+    \State $\textsc{SafePointCheck}(h)$
+        \label{alg_line:safe_point_check}
+    \Comment{Ensure $h\notin\braces{\mathcal{O}, g_{1}, -g_{1}}$}
+    \State \Return $h$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[tp]
+\caption{Hash to the base field $F_{p}$}
+\label{alg:hash-to-fp}
+\begin{algorithmic}[1]
+    \Function{HashToBase}{$\texttt{m}$,$\texttt{i}$,$\texttt{j}$}
+    \State $\texttt{s0} = H(\texttt{i}||\texttt{m})$
+    \State $\texttt{s1} = H(\texttt{j}||\texttt{m})$
+    \State $s_{0} = \texttt{b2u}(\texttt{s0})$
+    \State $s_{1} = \texttt{b2u}(\texttt{s1})$
+    \State $c = 2^{256} \mod p$
+    \Comment{Precomputed constant}
+    \State $t_{0} = s_{0}\cdot c \mod p$
+    \State $t_{1} = s_{1} \mod p$
+    \State $t = t_{0} + t_{1} \mod p$
+    \State \Return $t$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[tp]
+\caption{Base to $\G_{1}$}
+\label{alg:base-to-G1}
+\begin{algorithmic}[1]
+\Function{BaseToG1}{$t$}
+    \State $p_{1} = \parens{-1+\sqrt{-3}}/2$
+    \Comment{Precomputed constant}
+    \State $p_{2} = \sqrt{-3}$
+    \Comment{Precomputed constant}
+    \State $p_{3} = 1/3$
+    \Comment{Precomputed constant}
+    \State $p_{4} = g(1)$
+    \Comment{$g(1) = 1 + b$; Precomputed constant}
+    \State $s = \parens{p_{4}+ t^{2}}^{3}$
+    \State $\alpha = \brackets{t^{2}\parens{p_{4} + t^{2}}}^{-1}$
+        \label{alg_line:alpha_def}
+    \Comment{$\alpha=0$ when $t=0$}
+    \State $x_{1} = p_{1} - p_{2}t^{4}\alpha$
+    \Comment{On curve when $\alpha=0$}
+    \State $x_{2} = -1 - x_{1}$
+    \State $x_{3} = 1 - p_{3}s\alpha$
+    \State $a_{1} = x_{1}^{3} + b$
+    \State $a_{2} = x_{2}^{3} + b$
+    \State $r_{1} = \chi_{p}(a_{1})$
+    \State $r_{2}  = \chi_{p}(a_{2})$
+    \State $i = \parens{r_{1}-1}\parens{r_{2}-3}/4 + 1$
+        \label{alg_line:new_coef_func}
+    \State $c_{1} = \texttt{CTEq}(1,i)$
+    \State $c_{2} = \texttt{CTEq}(2,i)$
+    \State $c_{3} = \texttt{CTEq}(3,i)$
+    \State $x = c_{1}x_{1} + c_{2}x_{2} + c_{3}x_{3}$
+    \State $y = \texttt{sign0}(t)\sqrt{x^{3}+b}$
+    \State \Return $(x, y)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}

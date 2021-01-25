@@ -1,0 +1,81 @@
+\subsection{Comparision with Ethereum Distributed Key Generation Paper}
+\label{ssec:ethdkg_comparison}
+
+In~\cite{ethdkg}, the authors presented the Ethereum
+Distributed Key Generation whitepaper.
+Here, participants work together to form a master public key
+(the public key for the group)
+based on verifiable secret sharing.
+The master secret key (the private key for the group)
+is the summation of the shared secrets correctly shared by
+valiadators.
+This system may proceed even with a limited number of Byzantine actors.
+In the end, participants may compute partial signatures of a message
+which may be combined to form a valid group signature.
+
+While we follow the procedure of~\cite{ethdkg} in general,
+there are other concerns that must be taken into consideration.
+The MadNetwork will be a sidechain of Ethereum,
+and the keys we construct will be used to sign the blocks of our sidechain.
+By anchoring into Ethereum, we are able to use smart contracts to enforce
+compliance with the consensus algorithm as well as punish
+those who behave in a cryptographically-verifiable malicious way.
+Malicious behavior include submitting false keys, submitting
+false proofs, signing invalid messages, and similar actions.
+This is different from the original paper where everything
+happened on Ethereum and participants who
+acted maliciously during the key derivation stage would still
+be allowed to proceed because honest actors would be able to
+work together to derive the correct information.
+In that setting, the focus was having a $\parens{t,n}$-thresholded
+system whereby $t+1$ actors are required to work together to
+sign messages for the group.
+Here, $t$ and $n$ are preassigned.
+In our case, we specifically desire a Byzantine-fault tolerant
+thresholded system, whereby we require $t = \ceil{2n/3}-1$.
+Even though we have the same $t$ values for $n = 3k$ and $n = 3k-1$
+(thereby potentially allowing one malicious validator to be
+ejected without forcing a required restart),
+we will restart the DKG process whenever malicious behavior
+is cryptographically proven.
+By forcing a restart upon pernicious action,
+validators are discouraged from malicious activity as well
+as lose the opportunity to earn block rewards.
+We also restart when validators fail to submit the required
+information.
+In this case when malicious intent cannot be proven due to
+the possiblity of technical failure, a minor fine will be
+given due to time cost of the other participants.
+
+During the DKG process, all of the material necessary
+to recover a participant's secret is available provided
+enough actors work together.
+As mentioned in~\cite{ethdkg}, this is useful in order to allow
+for the DKG to continue even if certain participant's fail to cooperate,
+but the problem is that with this secret information it would
+be possible for a large enough malicious subset (specifically,
+a majority greater than two-thirds) to recover a secret
+and produce valid signatures from participant $P_{i}$
+proving malicious behavior that is not, in fact, perpetrated by $P_{i}$.
+This is of serious concern because participants
+stake tokens on the basis of being validators
+on our blockchain and receiving block rewards for their computation
+and are threatened with losing stake should they
+behave nefariously.
+
+Requiring at least 67\% percent of the validators to work together
+in order to produce stake-burning results is
+better than a 51\% Attack which can occur
+in Proof-of-Work blockchains but it leaves something to be desired;
+we would like for honest validators to be immune to
+the previously-mentioned behavior even if there is only
+one honest participant.
+To combat this, we will require all messages to be signed
+by a participant's Ethereum's private key.
+This will allow all messages to be validated against the Ethereum
+public key and will be safe so long as the Ethereum private key
+is secure.
+In this way, any secret information leaked during the distributed
+key generation will not enable Byzantine actors to produce
+cryptographic proof of malicious behavior against honest participants.
+

@@ -1,0 +1,519 @@
+\subsection{Hash-to-curve Functions}
+\label{ssec:hash-to-curve}
+
+The contents of this section should not be considered a full proof
+of security but are for implementation reference.
+Formal treatment of the security proofs for hash-to-curve
+functions are handled in referenced works.
+
+We turn our attention to the hash-to-curve functions
+implemented in our system.
+The contents of this section are described hereafter.
+First, we review a mechanism often employed to solve this problem.
+Then, we briefly discuss why this solution is not ideal in our setting.
+Finally, we introduce the basis of our implementation and proceed into the
+definition of the algorithms used in our system after a brief review of
+some required mathematical operations.
+All algorithms may be found at the end of this section.
+
+The seemingly standard, non-deterministic method to perform a hash-to-curve
+operation in the elliptic curve setting is to use the ``MapToGroup''
+method as presented in the original BLS short signature
+paper~\cite{boneh2001short}.
+In this method values are hashed into
+$\F_{p}$ by modular arithmetic with a concatenated counter.
+This counter starts at a fixed value, and is incremented until
+a value is found that creates a valid point on the specified
+elliptic curve.
+While this may be sufficient in some instances, we prefer 
+deterministic methods due to the need for bounded
+computational overhead.
+In our system, the need for bounded computational
+overhead arises from a desire to allow an Ethereum smart contract to
+perform the hash-to-curve operations with bounded gas consumption.
+Deterministic methods also have the benefit of minimizing
+side-channel attacks in those
+algorithms that require such protection.
+
+The hash-to-curve implementation selected allows the problem space to be
+divided into independent problems such that their solutions may be composed.
+Specifically, we first hash to the base field
+(hash map $\mathfrak{h}:\braces{0,1}^{*}\to \F$)
+and then find a deterministic map from the base field
+to the elliptic curve (function $f:\F\to E(\F)$).
+This approach allows for a separation of concerns and has become a
+standard approach to the problem of hashing into an elliptic curve
+~\cite{icart2009hash,ft2012bnhashtocurve,boneh2019h2cBLS12}.
+Although this strategy does offer a simplified view of the problem,
+mapping from the base field to the elliptic curve is nontrivial.
+Additionally, it is frequently the case that $f$ is not surjective, but
+we can overcome this limitation to obtain a surjective hash-to-curve algorithm
+under easily-satisfied
+conditions~\cite{tibouchi2014elligator,ft2012bnhashtocurve}.
+Specifically, we use domain-separation in order to obtain independent hash
+functions.
+These independent hash functions allow us overcome a non-surjective
+mapping.
+We will fully address this concern later in this document.
+
+Our discussion of hashing functions follow
+\cite{ft2012bnhashtocurve,boneh2019h2cBLS12}.
+We ask the reader to note that in the remaining work of this section,
+we view the group $E(\F_{p})$ additively unless otherwise specified.
+We highlight this fact because this is different from the multiplicative
+notation used previously in this document.
+Before we define our implementation of the hash-to-curve algorithms employed,
+we feel a review of the mathematics would benefit the reader.
+Thus, we first
+review the mathematics necessary to perform the hash-to-curve operations.
+After this review, we present the algorithm for hashing to $\G_{1}$
+and then present the algorithm for hashing to $\G_{2}$.
+
+For reference, the full \textsc{HashToG1} algorithm can be
+found in Alg.~\ref{alg:hash-to-G1} and the full algorithm for \textsc{HashToG2}
+can be found in Alg.~\ref{alg:hash-to-G2}.
+
+
+
+\subsubsection{Inverses, Square Roots, and Legendre Symbols
+    in $\F_{p}$}
+\label{sssec:finite_math_Fp}
+
+In this section we review some finite field mathematics that are
+important in our hash-to-curve setting.
+
+We begin by reviewing inversion in $\F_{p}$.
+First, we recall $\F_{p}^{*} \equiv \F_{p}\setminus\braces{0}$,
+the nonzero elements of our finite field.
+For $a\in\F_{p}^{*}$, we have Euler's formula:
+
+\begin{equation}
+    a^{p-1} = 1 \mod p.
+\end{equation}
+
+\noindent
+This implies $a^{-1} \mod p = a^{p-2}$.
+We acknowledge more efficient methods for computing modular inverses are
+possible, but exponentiation can easily be performed in constant time, which
+is a goal of our implementation. This concludes our discussion of computing
+inverses in $\F_{p}$.
+
+We now review the mechanisms for
+computing Legendre symbols.
+We recall that $a\in\F_{p}^{*}$ is a \emph{quadratic residue}
+if there is $x\in\F_{p}$ such that $x^{2} = a \mod p$;
+otherwise, $a$ is a called a \emph{quadratic nonresidue}.
+This allows us to define the Legendre symbol~\cite{imc2008}:
+
+\begin{equation}
+    \chi_{p}(a) \equiv \begin{cases}
+        1 \quad& \text{if there $a$ is a quadratic residue modulo $p$.} \\
+        -1 \quad& \text{if there $a$ is a quadratic nonresidue modulo $p$.} \\
+        0 \quad& \text{if $p \mid a$}
+    \end{cases}
+\end{equation}
+
+\noindent
+The Legendre symbol has a simple formula:
+
+\begin{equation}
+    \chi_{p}(a) = a^{\frac{p-1}{2}}.
+\end{equation}
+
+\noindent
+This formula holds even when $a=0$.
+This concludes our discussion of computing the Legendre Symbol in $\F_{p}$.
+
+Computing square roots is more challenging.
+We now review the mechanism of computing square roots.
+In our case $p = 3\mod 4$, so there is a simple
+formula to solve $x^{2} = a$:
+
+\begin{equation}
+    x = a^{\frac{p+1}{4}}.
+\end{equation}
+
+\noindent
+This relies on the assumption that $a$ is a quadratic residue,
+so $a^{\frac{p-1}{2}} = 1$.
+This concludes our discussion of computing the square roots in $\F_{p}$.
+
+Taking inverses, Legendre symbols, and square roots
+gives us the necessary tools to hash to $\G_{1}$.
+This ends the preliminary work necessary to develop
+\textsc{HashToG1}.
+
+
+\subsubsection{Inverses, Square Roots, and Legendre Symbols
+    in $\F_{p^{2}}$}
+\label{sssec:finite_math_Fp2}
+
+The previous section reviewed the mathematics of inverses, square roots, and
+Legendre Symbols in $\F_{p}$.
+We must be able to perform the same operations
+in $\F_{p^{2}}$ if we wish to hash to $\G_{2}$.
+While computing square roots and
+inverses may be familiar to the reader in $\F_{p}$, the operations require
+special handling in $\F_{p^{2}}$.
+We review these mechanisms now.
+
+We first address the problem of computing inverses in $\F_{p^{2}}$.
+Our discussion and methods follow~\cite{adj2012sqrtEvenExt},
+and we present their general results applied to our particular case.
+As mentioned above, the setting of our elliptic curve is $p = 3\mod 4$.
+This implies $-1$ is a quadratic nonresidue.
+Thus, we have the following isomorphism:
+
+\begin{equation}
+    \F_{p^{2}} \simeq \F_{p}[i]/\parens{i^{2}+1}.
+\end{equation}
+
+\noindent
+This is the analogous to constructing the complex numbers $\C$ from
+the real numbers $\R$.
+Our implementation uses this construction. We may use
+this construction to compute an efficient inversion as follows:
+
+\begin{equation}
+    \parens{a_{0} + a_{1}i}^{-1} = \frac{a_{0}-a_{1}i}{a_{0}^{2}+a_{1}^{2}}.
+\end{equation}
+
+\noindent
+The main computational cost of this operation is the inversion of an element
+in $\F_{p}$.
+This concludes our discussion of computing inverses in $\F_{p^{2}}$.
+
+We now begin our discussion of computing the Legendre Symbol in $\F_{p^{2}}$
+If $a = a_{0} + a_{1}i\in\F_{p^{2}}$, then $a$ is a
+quadratic residue in $\F_{p^{2}}$ if and only if $a_{0}^{2} + a_{1}^{2}$
+is a quadratic residue in $\F_{p}$.
+The main computational cost of this operation is the computation of the Legendre
+symbol of an element in $F_{p}$.
+From the above we have the Legendre symbol in $\F_{p^{2}}$,
+which we denote as \textsc{LegendreFP2} or $\chi_{p^{2}}(\cdot)$;
+this particular algorithm is presented in
+Alg.~\ref{alg:legendre-fp2}.
+This concludes our discussion of computing the Legendre Symbol in
+$\F_{p^{2}}$.
+
+We will now look at computing square roots in $\F_{p^{2}}$.
+The main idea is to find $b\in\F_{p^{2}}$ and odd $s$ such
+$b^{2}a^{s} = 1$.
+In this case, we see
+
+\begin{align}
+    \brackets{ba^{\frac{s+1}{2}}}^{2} &= b^{2}a^{s+1} \nonumber\\
+        &= a.
+\end{align}
+
+\noindent
+If we set
+
+\begin{align}
+    b &= \parens{1 + a^{\frac{p-1}{2}}}^{\frac{p-1}{2}} \nonumber\\
+    s &= \frac{p-1}{2},
+\end{align}
+
+\noindent
+then when $b\ne0$, we have $b^{2}a^{s} = 1$.
+When $b=0$, we have $a^{\frac{p-1}{2}}=-1$.
+In this case, our square root is $ia^{\frac{p+1}{4}}$.
+This procedure is formally presented in~Alg.~\ref{alg:sqrt-fp2}.
+The main computational cost of this operation is two exponentiations
+in $\F_{p^{2}}$.
+This concludes our discussion of computing square roots in $\F_{p^{2}}$
+and the preliminary review of those operations
+necessary to develop \textsc{HashToG2}.
+
+
+\subsubsection{Hashing to Base}
+\label{sssec:hash-to-base}
+
+In this section we will describe the hash-to-base operation.
+We begin by discussing the construction of a random oracle into
+$\F_{p}$ using a single cryptographic hash function with
+domain separation.
+We then bound the deviation from uniformity in this operation.
+
+In the following $H$ is a $256$-bit hash function.
+In our implementation we use \textsc{Keccak256}.
+Note this is the \textsc{Sha3} variant used by Ethereum
+that differs from the NIST approved \textsc{Sha3} hash function due to a
+difference in the handling of padding.
+
+Let $H$ act as a random oracle.
+We map from $H$ to $\Z$ by interpreting the output of a
+cryptographic hash function as a big endian unsigned integer.
+This can be seen in lines 4 and 5 of $\textsc{HashToBase}$
+as the function named $\texttt{b2u}$.
+Although we may naively map from $\Z$ to $\Z_{p}$ by simply taking the
+ouput of $H$ modulo $p$, this would be insecure in our setting due to the
+nonuniformity of this operation.
+In order to ensure the mapping from $\Z$ to $\Z_{p}$ is more
+uniformly distributed, domain separation is utilized.
+Specifically, we use domain separation in order obtain independent hash
+functions from $H$ through concatenation of constants with the message being
+hashed.
+These independent hash functions allow us to create a secure 512-bit random
+number from a single cryptographic hash function.
+The full explanation of this operation is below.
+
+Let $\textsc{HashToBase}:\braces{0,1}^{*}\times\braces{0,1}^{8}\times
+\braces{0,1}^{8}\to\F_{p}$ denote our random oracle into the
+underlying field $\F_{p}$.
+In the $\textsc{HashToBase}$ operation the first component corresponds to the
+underlying message being hashed, while the last two elements provide the
+necessary domain separation.
+See Alg.~\ref{alg:hash-to-fp} for the full implementation.
+
+Due to the fact $p$ is prime and not a power of 2, there will be some
+nonuniformity in the resulting distribution of \textsc{HashToBase}.
+We investigate this nonuniformity now.
+
+First, we assume that $H:\braces{0,1}^{*}\to\Z_{N}$
+is a random oracle and $p\in\braces{1,2,\cdots,N-1}$.
+We want to determine how much $H(m)\mod p$ deviates from uniformity.
+We restrict ourselves to the case when $p\nmid N$.
+Let
+
+\begin{equation}
+    N = qp + r
+\end{equation}
+
+\noindent
+with $0\le r< p$ and $q\ge1$.
+Because $p\nmid N$, we have $r\ge1$.
+Let $X$ be uniformly distributed on $\Z_{N}$ and set $X_{p} = X \mod p$.
+Furthermore, we let $U_{p}$ be the uniform distribution modulo $p$.
+Then
+
+\begin{equation}
+    \mathcal{P}\parens{X_{p}\in\braces{0,\cdots,r-1}} = \frac{q+1}{N}
+\end{equation}
+
+\noindent
+and
+
+\begin{equation}
+    \mathcal{P}\parens{X_{p}\in\braces{r,\cdots,p-1}} = \frac{q}{N}.
+\end{equation}
+
+\noindent
+Here, $\mathcal{P}$ denotes the probability of an event occurring.
+We now determine the deviation of $X_{p}$ from the uniform
+distribution $U_{p}$:
+
+\begin{align}
+    \Delta\parens{X_{p},U_{p}} &\equiv
+        \sum_{k=0}^{p-1} \abs{\mathcal{P}(X_{p}=k) - \mathcal{P}(U_{p}=k)}
+        \nonumber\\
+    &= \sum_{u=0}^{r-1} \abs{\frac{q+1}{N} - \frac{1}{p}} +
+        \sum_{u=r}^{p-1} \abs{\frac{q}{N} - \frac{1}{p}} \nonumber\\
+    &= r\frac{qp + p - N}{pN} + \parens{p-r}\frac{N-qp}{pN}
+        \nonumber\\
+    &\le \frac{p}{N}.
+\end{align}
+
+\noindent
+From this, we see that if $p$ is a $k$-bit prime and
+$N = 2^{k+\ell}$, then the deviation from uniformity is $\le2^{-\ell}$.
+
+In our case, $p$ is a 254-bit prime and we concatenate the output
+of independent hash functions in order to have a uniformly distributed
+512-bit output.
+From the above it may be seen that \textsc{HashToBase} produces outputs whose
+deviation from uniformity is less than $2^{-258}$.
+This deviation is sufficiently small as to not be of concern.
+Further work is required to more formally prove this assumption, but
+this work is not included at this time.
+
+
+\subsubsection{Base to $\G_{1}$}
+\label{sssec:base-to-G1}
+
+In this section we discuss the construction of a hash-to-G1 algorithm.
+We begin by noting the non-surjective nature for many functions
+$f:\F_{p}\to E(\F_{p})$.
+Then, we cite a known solution to this problem and provide necessary
+mathematics to understand the fundamental operation that
+overcomes the problem.
+Next, we discuss the actual implementation.
+Lastly, we discuss specific exclusion of three points from the allowable
+outputs of this algorithm for security purposes.
+
+Let us now suppose that we have a hash function
+$\mathfrak{h}:\braces{0,1}^{*}\to\F_{p}$ and a
+deterministic map $f:\F_{p}\to E(\F_{p})$.
+As has been previously stated, in many
+situations~\cite{icart2009hash,ft2012bnhashtocurve,boneh2019h2cBLS12}
+$f$ is not surjective.
+That is, there are points on the elliptic curve $E(\F_{p})$
+(sometimes a nontrivial fraction) which cannot be reached by $f$.
+Even so, if we use domain separation to construct independent hash functions,
+$\mathfrak{h}_{1}, \mathfrak{h}_{2}:\braces{0,1}^{*}\to\F$,
+then
+
+\begin{equation}
+    F(\texttt{m}) = f(\mathfrak{h}_{1}(\texttt{m}))
+                    + f(\mathfrak{h}_{2}(\texttt{m}))
+\end{equation}
+
+\noindent
+is indistinguishable from a random oracle on $E(\F_{p})$
+under certain restrictions on $f$.
+See~\cite{ft2012bnhashtocurve,tibouchi2014elligator} for details.
+
+We now turn our attention to determining $f:\F_{p}\to E(\F_{p})$.
+Finding a map $f:\F_{p}\to E(\F_{p})$ is involved.
+Our BN curve has the form
+
+\begin{align}
+    E:y^{2} &= g(x) \nonumber\\
+            &= x^{3} + b.
+\end{align}
+
+\noindent
+From~\cite{ft2012bnhashtocurve}, it possible to show there
+are $x_{1},x_{2},x_{3},y\in\F_{p}$ such that
+
+\begin{equation}
+    g(x_{1})g(x_{2})g(x_{3}) = y^{2}.
+\end{equation}
+
+\noindent
+When $y\ne0$, quadratic reciprocity implies that $g(x_{i})$ is square
+for some $i$; that is, for some $i$ we have
+$(x_{i},\sqrt{g(x_{i})})\in E(\F_{p})$.
+For uniqueness, we choose the smallest $i$.
+We will use the construction of~\cite{ft2012bnhashtocurve}
+to determine such points with some modifications based
+on work in~\cite{boneh2019h2cBLS12}.
+The exact algorithm can be found in Alg.~\ref{alg:base-to-G1}.
+
+One of the main difficulties is determining $i$ in such a way
+as to not leak information; because of this, we do not wish to
+rely upon if statements.
+In~\cite{ft2012bnhashtocurve}, they suggested the function
+
+\begin{equation}
+    \psi(r_{1},r_{2}) = \brackets{\parens{r_{1}-1}r_{2}\mod3} + 1.
+    \label{eq:ftAB}
+\end{equation}
+
+\noindent
+This function works under the assumption that modular
+arithmetic always returns positive integers.
+This is not always the case in programming languages;
+in particular, it does not hold in \textsc{Go} (Golang), the language
+we use to implement these algorithms.
+To circumvent this, we use the following function,
+which is implemented in Line~\ref{alg_line:new_coef_func}
+of Alg.~\ref{alg:base-to-G1}:
+
+\begin{equation}
+    \parens{r_{1}-1}\parens{r_{2}-3}/4 + 1.
+    \label{eq:newAB}
+\end{equation}
+
+In~\cite{ft2012bnhashtocurve}, the authors encountered an issue when $t=0$.
+Their solution was to define
+
+\begin{equation}
+    \textsc{BaseToG1}(0) = \parens{\frac{-1+\sqrt{-3}}{2}, \sqrt{1+b}}.
+    \label{eq:baseToG1zero}
+\end{equation}
+
+\noindent
+Wahby and Boneh~\cite{boneh2019h2cBLS12} suggest another
+method, which we implement, in order to have a more efficient
+algorithm.
+This implementation also affords the benefit of not needing to
+handle the case of $t=0$ separately.
+This can be seen in Line~\ref{alg_line:alpha_def}
+of Alg.~\ref{alg:base-to-G1} where we define $\alpha$ as the inverse
+of a value which depends on $t\in\F_{p}$.
+When $t=0$, we compute $\alpha = 0$
+because we compute inversions via exponentiation.
+Thus, the computational convention $0^{-1} = 0 \mod p$ is established.
+This leads to the same result as in Eq.~\eqref{eq:baseToG1zero}
+without special handling.
+
+We have cryptographic insecurity when
+$\textsc{HashToG1}(\texttt{m}) = g_{1}^{\alpha}$ for known $\alpha$.
+Note we briefly switch back to multiplicative notation at this time.
+In practice, it is likely this insecurity will only be known when
+$\alpha\in\braces{-1,0,1}$ or is sufficiently close to these values.
+We assume we may not fix simple proximity to these values, and thus only
+explicitly address the case of $\alpha\in\braces{-1,0,1}$.
+For clarity, this notation specifies the hash function outputs of
+the identity element, the generator, or the generator's
+inverse.
+Due to the concerns around the use of these points, we will not allow these
+individual cases.
+In order to enforce this requirement we include a
+\textsc{SafePointCheck} in \textsc{HashToG1};
+see Line~\ref{alg_line:safe_point_check} in Alg.~\ref{alg:hash-to-G1}.
+This function checks the point returned from the hash function for
+equivalence with the identity element OR equivalence of the point's
+$x$ coordinate with $1$.
+If either of these conditions is true, an error is raised.
+Although the probability of a hash mapping to these points is small, this
+error must be handled appropriately to prevent an attacker from causing
+unexpected errors in a remote system due to specially crafted messages.
+
+
+\subsubsection{Base to $\G_{2}$}
+\label{sssec:base-to-G2}
+
+We now take up the slightly more challenging possibility
+of computing a hash function to $\G_{2}$.
+Fortunately, we may utilize many of
+the previously described operations.
+Thus, we do not repeat those explanations and only discuss
+those operations that differ.
+We would like to remind the reader that the results in
+Sec.~\ref{sssec:finite_math_Fp2} allow
+us to compute Legendre symbols and square roots in $\F_{p^{2}}$.
+
+Using the derivation of~\cite[Section 3]{boneh2019h2cBLS12},
+we set $u_{0}=1$ as in $\G_{1}$ to obtain
+
+\begin{align}
+    x_{1} &= \frac{\sqrt{-3}-1}{2} - \frac{t^{2}\sqrt{-3}}{t^{2}+g'(1)}
+        \nonumber\\
+    x_{2} &= -1 - x_{2} \nonumber\\
+    x_{3} &= 1 - \frac{\parens{t^{2}+g'(1)}^{2}}{3t^{2}},
+\end{align}
+
+\noindent
+for $t\in\F_{p^{2}}$.
+Here, we have
+
+\begin{equation}
+    E':y^{2} = g'(x) = x^{3} + b',
+\end{equation}
+
+\noindent
+where $b' = b/\xi = 3/\parens{i+9}$.
+With this choice, $-g'(1)$ is a residue in $\F_{p^{2}}$.
+This ensures that $t\in\{0,\pm\sqrt{-g'(1)}\}$
+implies $x_{1}$ is a valid point on the curve;
+thus, all inputs result in valid outputs.
+See Alg.~\ref{alg:base-to-twist} for the algorithm.
+Thus, our hash functions to $\G_{1}$ and $\G_{2}$ are
+essentially the same.
+
+At this point, we have successfully mapped into $E'$;
+however, our goal is to map into $\G_{2}$.
+From~\cite{bnCurves}, we know $\abs{E'(\F_{p^{2}})} = q\parens{2p-q}$.
+This gives a cofactor $r = 2p-q$ because $p\nmid q$.
+We take care of this by clearing the cofactor.
+See Alg.~\ref{alg:hash-to-G2} for the full hash algorithm.
+
+\clearpage
+
+\input{algs/hash_to_G1.tex}
+
+\input{algs/gfp2_algs.tex}
+
+\input{algs/hash_to_G2.tex}

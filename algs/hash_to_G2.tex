@@ -1,0 +1,58 @@
+\begin{algorithm}[tp]
+\caption{Hash to $\G_{2}$}
+\label{alg:hash-to-G2}
+\begin{algorithmic}[1]
+\Function{HashToG2}{$\texttt{m}$}
+\Comment{Hash-to-G2 algorithm for BN curves}
+    \State $t_{0,0}=\textsc{HashToBase}(\texttt{m},\texttt{0x04},\texttt{0x05})$
+    \State $t_{0,1}=\textsc{HashToBase}(\texttt{m},\texttt{0x06},\texttt{0x07})$
+    \State $t_{1,0}=\textsc{HashToBase}(\texttt{m},\texttt{0x08},\texttt{0x09})$
+    \State $t_{1,1}=\textsc{HashToBase}(\texttt{m},\texttt{0x0a},\texttt{0x0b})$
+    \State $t_{0} = t_{0,0}i + t_{0,1}$
+    \State $t_{1} = t_{1,0}i + t_{1,1}$
+    \State $h_{0} = \textsc{BaseToTwist}(t_{0})$
+    \State $h_{1} = \textsc{BaseToTwist}(t_{1})$
+    \State $h = \textsc{ECAdd}(h_{0},h_{1})$
+    \State $g = \textsc{ECMul}(h, r)$
+    \Comment{Clearing cofactor $r = 2p-q$}
+    \State \Return $g$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[tp]
+\caption{Base to $E'$}
+\label{alg:base-to-twist}
+\begin{algorithmic}[1]
+\Function{BaseToTwist}{$t$}
+    \State $p_{1} = \parens{-1+\sqrt{-3}}/2$
+    \Comment{Precomputed constant}
+    \State $p_{2} = \sqrt{-3}$
+    \Comment{Precomputed constant}
+    \State $p_{3} = 1/3$
+    \Comment{Precomputed constant}
+    \State $p_{4} = g'(1)$
+    \Comment{$g'(1) = 1 + b'$; Precomputed constant}
+    \State $s = \parens{p_{4} + t^{2}}^{3}$
+    \State $\alpha = \brackets{t^{2}\parens{p_{4} + t^{2}}}^{-1}$
+        %\label{alg_line:alpha_def}
+    \Comment{$\alpha=0$ when $t\in\braces{0,\pm\sqrt{-p_{4}}}$}
+    \State $x_{1} = p_{1} - p_{2}t^{4}\alpha$
+    \Comment{On curve when $\alpha=0$}
+    \State $x_{2} = -1 - x_{1}$
+    \State $x_{3} = 1 - p_{3}s\alpha$
+    \State $a_{1} = x_{1}^{3} + b'$
+    \State $a_{2} = x_{2}^{3} + b'$
+    \State $r_{1} = \chi_{p^{2}}(a_{1})$
+    \State $r_{2} = \chi_{p^{2}}(a_{2})$
+    \State $i = \parens{r_{1}-1}\parens{r_{2}-3}/4 + 1$
+        %\label{alg_line:new_coef_func}
+    \State $c_{1} = \texttt{CTEq}(1,i)$
+    \State $c_{2} = \texttt{CTEq}(2,i)$
+    \State $c_{3} = \texttt{CTEq}(3,i)$
+    \State $x = c_{1}x_{1} + c_{2}x_{2} + c_{3}x_{3}$
+    \State $y = \texttt{sign0}(t)\sqrt{x^{3}+b'}$
+    \State \Return $(x, y)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}

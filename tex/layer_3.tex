@@ -1,0 +1,176 @@
+\section{Layer Three}
+
+\subsection{Scriptless Scripts and State Channels}
+
+An important implication of this work is one that was not fully
+considered at the time of conception.
+The realization came later when thinking about how the accusation and
+snapshot formation process operates.
+Namely, the inclusion of the abstraction of signature verification may
+be extended in further iterations to allow Schnorr signatures and other
+primitives.
+With this toolbox in place and the ability to extend the validation of
+a UTXO in an isolated manner, as is afforded by the design of the
+account abstraction system, more exotic primitives may be easily built.
+These include adaptor signatures, SE-snarks, and many other primitives
+that may be leveraged to accommodate the concept of scriptless scripts.
+Ultimately these constructs allow the system we have defined to be used
+as a restricted smart contract capable system without the need to
+verify the actual smart contract logic in the chain.
+
+Further, other protocols may leverage these capabilities in concert
+with the existing ability to compactly prove state about the sidechain
+in the context of an Ethereum smart contract.
+The authors of this paper believe this ultimately may serve as an
+interesting primitive for constructing proofs of verifiable computation
+within an Ethereum smart contract.
+An example of this process that may be built based on the operation of
+the system without any modification follows.
+
+State channels are a promising technology that suffer from a problem of
+requiring all participants to be online at all times.
+This problem may be addressed through a hybrid solution based on the
+construction of MadNetwork.
+Given the existence of MadNetwork, a state channel may be constructed
+using a negotiated BLS multisignature account as described in the
+account abstraction section.
+
+Let these two parties be named Alice and Bob.
+Let Alice and Bob have some motivation for continual exchange of value.
+Alice and Bob coordinated to negotiate a 2 out of 2 BLS multisignature.
+
+Alice will be the first mover in this example, and so Alice will create
+a smart contract on Ethereum in which she writes the negotiated public
+key and deposits some value.
+Let this contract have knowledge of the snapshot contract for
+MadNetwork.
+Let this smart contract have three exit conditions.
+The first exit should be an exit condition that allows Alice to remove
+the deposit if Bob does not also place an equal deposit as Alice by
+some predetermined block number in the future.
+Let the other two exit conditions only be accessible after both parties
+have placed such a deposit.
+Let these other two exit conditions be an exit initiated by Alice or an
+exit initiated by Bob.
+Let an exit by Alice or Bob only occur within ten Ethereum blocks of a
+snapshot being recorded to the Ethereum blockchain by the validators of
+MadNetwork.
+Let this exit require a proof of state against the snapshot and only be
+valid for the most recent snapshot of MadNetwork.
+
+Before Bob places a deposit, let Alice and Bob coordinate to create a
+DataStore in MadNetwork that holds a single 32 byte value.
+Let this value be the balance of Alice’s deposit in the Ethereum
+smart contract.
+Once this datastore has been constructed, let Bob place his deposit
+into the smart contract.
+Each time Alice and Bob wish to exchange value let Alice and Bob
+coordinate to sign a new transaction that overwrites the previous
+DataStore with a new value.
+This operation should not occur in any epoch until at least fifteen
+blocks have been recorded in the Ethereum blockchain since the last
+snapshot.
+This delay is to ensure the window of generating a valid exit proof for
+the smart contract is fully terminated before a new round of exchange
+may begin.
+
+Let the value of the DataStore be the new balance of Alice after a
+mutually agreed upon exchange of value.
+What governs such exchange is beyond the scope of this example.
+Let us simply say that they agree to exchange value based on
+information external to the system.
+For each state transition, both parties must sign a partial signature
+to a transaction that is written to the sidechain.
+Thus, the value is mutually agreed upon.
+
+If at any point either party wishes to terminate the channel, the party
+may stop signing additional changes to the DataStore.
+At the termination of an epoch, the data of this DataStore may be
+proven in the Ethereum Blockchain in a compact manner using the
+parameters of the most recent snapshot.
+The proof of existence for the DataStore UTXO is just a Merkle Proof of
+Inclusion against the StateRoot of the snapshot block.
+The parsing logic of the DataStore is fairly trivial assuming the
+RawData field of the DataStore is a fixed size object.
+This assumption will allow fixed offset parsing of the canonical
+encoding of the DataStore object.
+
+Once the existence of a UTXO is proven against a snapshot, the public
+key of the signer must be proven as equal to the 2 out of 2 BLS public
+key as stored in the smart contract.
+Assuming economic security of the sidechain is sufficient, the BLS
+signature of the DataStore need not be verified in the smart contract
+since this requirement is enforced in the sidechain validation logic.
+If this assumption is insufficient, our system is capable of validating
+a BLS signature in an Ethereum smart contract for less than 200K gas.
+This can likely be bounded more closely to 150K gas, but 200K is a safe
+upper bound for what we are describing.
+
+Alice or Bob may initiate such a termination in any epoch in the
+designated window.
+Thus, the final state of the external system may be collapsed and
+proven in the context of the EVM.
+This state is the final state of the system which is, by definition,
+the last state that both parties have agreed to in advance.
+Given that this state is the balance of Alice, the smart contract may
+enforce that Alice may withdraw only this balance at the termination of
+the channel.
+Bob may only withdraw his own value minus the delta of Alice’s initial
+value.
+
+The operation of parsing the object, validating the Merkle proof, and
+checking the data field as a simple uint256 value should cost around
+700K gas for a Merkle Proof of 256 keys.
+This is the most complex Merkle Proof possible and actual costs are
+likely to be a fraction of this worst case value.
+Specifically, the cost should scale as $O(\log n)$ of the number of UTXOs
+that exist in the State Trie.
+
+This construct is a toy example, but it does highlight a core benefit
+of the protocol.
+Namely, that the problems around state channel participant availability
+may be addressed by preventing an exit from a state both parties have
+not agreed to as the most recent state of the system.
+Other constructs may be devised for more complex cases.
+The fundamental idea is that MadNetwork may act as an out-of-band
+storage system that is cryptographically verifiable and allows proof of
+an item being the most recent object state.
+
+\subsection{AdLedger PKI}
+
+One application of MadNetwork is Transparent by Design Public Key
+Infrastructure (TPKI).
+This is discussed more fully in its own whitepaper, but we summarize
+the main ideas here.
+
+The need for TPKI comes from the unfortunate but undeniable truth:
+the x.509 standard is broken beyond repair.
+This comes from ill-defined standards as well as haphazard attempts
+at patchwork extensions to salvage it.
+One main issue arises from certificate revocation, as it is not
+possible to ensure that invalid certificates are rejected.
+A proposed solution is OCSP, but it is not sufficient due to its
+inability to handle the large number of requests.
+
+To counteract this, we developed TPKI.
+Instead of issuing certificates with the lifetime of years that
+may become compromised, we issue short-lived certificates (validity
+around one day) that are regularly renewed.
+Having short-lived certificates ensures auto-revocation and requires
+proof of continued compliance for reissuance.
+Additionally, each certificate has well-defined properties and we
+do not allow arbitrarily chaining of certificates; this protects
+us against some known attacks.
+Furthermore, any certificate not present or ill-formed is considered
+invalid by default and should not be trusted.
+Root level certificates are not cross-validated (although they
+are self-signed) to ensure a well-defined notion of validity
+and revocation.
+Should a root certificate become compromised, a predetermined storage
+location in MadNetwork will hold the revocation key.
+This revocation public key, if present, will show that all users
+should reject subordinate certificates from this root certificate.
+We envision there being multiple Certificate Authorities with separate
+root certificates so that the revocation of one will not affect
+the others.
+
