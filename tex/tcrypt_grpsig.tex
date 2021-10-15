@@ -280,33 +280,38 @@ From there, we will ensure
 \noindent
 Requiring submission of $\gpk_{j}^{*}$ and the associated
 proof could be required at the time of submission.
-This would be costly, though, and will instead allow
-the other participants to prove malicious behavior.
+This would be costly, though, and we instead require
+other participants to prove malicious behavior.
 We would prefer the entire process to be as inexpensive
 as possible should there be no malicious actors.
 
-It will be expensive to carry out this proof of malicious action.
+It is nontrivial to carry out this proof of malicious action.
 The reason is that in order to compute $\gpk_{j}^{*}$,
 the message containing the shared secrets and public coefficients
 from every participant will need to be entered into a smart contract
 in order to obtain the right hand side of
 Eq.~\eqref{eq:gpkj_star_def}.
-Because of this, there is another, cheaper way to prove malicious
+Because of this, there may be a cheaper way to prove malicious
 behavior provided a Byzantine-fault tolerant group
-correctly submits $\gpk_{j}$ with valid signatures $\sigma_{j}$
-and we discuss this now.
+correctly submits $\gpk_{j}$ with valid signatures $\sigma_{j}$.
 
-First, a participant can go through all possible subgroups
-$\mathcal{R}\subseteq\mathcal{Q}$ searching for a subset
-whose signatures can be combined to form a valid
+First, participants can perform the above $\gpk_{j}^{*}$ validation
+check offline.
+This operation is only expensive in a resource-constrained
+environment like the EVM.
+If there is a Byzantine-fault tolerant subset
+$\mathcal{R}\subseteq\mathcal{Q}$,
+then their submitted signatures can be combined to form a valid
 group signature.
 Once a valid subset $\mathcal{R}$ is found,
 we can then choose $P_{i}\in\mathcal{Q}\setminus\mathcal{R}$
 in order to determine if
 $\braces{P_{i}}\cup\parens{\mathcal{R}\setminus \braces{P_{v}}}$
 can form a valid signature;
-if it does not, then $P_{i}$ is malicious.
-Here $P_{v}\in\mathcal{R}$ is a fixed.
+if it does not, then $P_{i}$ is malicious
+because we just showed that we were able to form a valid group signature.
+Here $P_{v}\in\mathcal{R}$ is a fixed, and the validation logic
+is performed in the EVM.
 In this case, two lists of participants would be entered into a smart
 contract: a list of valid participants followed by a list of
 invalid participants.
@@ -342,40 +347,54 @@ First, to compute $\gpk_{j}^{*}$, we must compute $F_{i}(j)$:
 \end{equation}
 
 \noindent
-The cost of computing $F_{i}(j)$ is dominated by $t$ calls to \textsc{ECMul}.
-This will be done for each element in $\mathcal{Q}$, so the
-main computation is $nt$ calls to \textsc{ECMul} in addition
-to a call to \textsc{PairingCheck}.
-Thus, we see
+Using this equation with Eq.~\eqref{eq:gpkj_star_def},
+we see
+
+\begin{align}
+    \gpk_{j}^{*} &= \prod_{P_{i}\in\mathcal{Q}}F_{i}(j)
+            \nonumber\\
+        &= \prod_{P_{i}\in\mathcal{Q}} \brackets{\prod_{k=0}^{t} C_{ik}^{j^{k}}}
+            \nonumber\\
+        &= \prod_{k=0}^{t}
+            \brackets{\prod_{P_{i}\in\mathcal{Q}} C_{ik}}^{j^{k}}
+    \label{eq:gpkj_rearrange}
+\end{align}
+
+\noindent
+With this rearrangement, we see that inside the brackets we must perform
+$t$ additions; this is followed by one multiplication.
+This set of operations is performed $t+1$ times.
+To combine these results also requires $t$ more additions.
+In all, we have $t^{2} + 2t$ \textsc{ECAdd} operations,
+$t+1$ \textsc{ECMul} operations,
+and 1 \textsc{PairingCheck} operation.
+Given that $t \sim \frac{2}{3}n$, we have
 
 \begin{equation}
-    \text{Cost of Standard Proof} \sim 113000 + 4000n^{2}.
+    \text{Cost of Standard Proof} \sim 113000 + 4200n + 67n^{2}.
 \end{equation}
 
 \noindent
-For $n=20$, this corresponds to $1.7$M gas; the gas limit
-is 10M.
+For $n=20$, this corresponds to $224$K gas;
+the gas limit is 10M.
+
+It is critical to rearrange the order of the coefficients
+in Eq.~\eqref{eq:gpkj_rearrange};
+the original version requires $O(n^{2})$ \textsc{ECMul} operations
+while the rearranged form requires only $O(n)$.
+This results in a significantly larger gas requirement.
 
 We now look at the cost of the group method.
-We will ignore the initial cost of ensuring a valid group signature
-from $\mathcal{R}$.
-The computation consists of forming
+To form a group signature, we must compute
 
 \begin{equation}
-    \sigma = \prod_{P_{j}\in\mathcal{R}^{*}_{k}} \sigma_{j}^{R_{j}},
+    \sigma = \prod_{P_{j}\in\overline{\mathcal{R}}} \sigma_{j}^{R_{j}},
 \end{equation}
 
 \noindent
-where
-
-\begin{equation}
-    \mathcal{R}^{*}_{k} = \parens{\mathcal{R}\setminus P_{v}}\cup
-        \braces{P_{k}}
-\end{equation}
-
-\noindent
-for $P_{v}\in\mathcal{R}$ fixed and $P_{k}\in\mathcal{I}$,
-the set of participants who incorrectly shared $\gpk_{j}$.
+where $\overline{\mathcal{R}}$ is the set of participants
+who form a group signature.
+We must have $\abs{\overline{\mathcal{R}}} = t+1$.
 From there, we would call
 
 \begin{equation}
@@ -383,9 +402,7 @@ From there, we would call
 \end{equation}
 
 \noindent
-to ensure that this is an invalid signature,
-and the initial check confirming $\mathcal{R}$ forms a valid
-signature implies that $P_{k}$ is malicious.
+to verify the signature.
 
 Each group signature $\sigma$ will require forming $R_{j}$
 and computing $\sigma_{j}^{R_{j}}$.
@@ -401,58 +418,53 @@ We recall from Eq.~\eqref{eq:Rj_coefs} that
 
 \noindent
 Naively, we would need to compute $t$ finite field inversions,
-which corresponds to $t$ \textsc{ModExp} calls, to compute
-$R_{j}$.
-This must be performed $t+1$ times to form $\sigma$;
-we must also call \textsc{ECMul} $t+1$ times but this is
-negligible.
-Finally, we must call
+which corresponds to $t$ \textsc{ModExp} calls, to compute $R_{j}$;
+this must be performed $t+1$ times to form $\sigma$.
+This results in an expensive operation.
 
-\begin{equation}
-    \textsc{PairingCheck}(\sigma, \bar{h}_{2}, H_{2C}(M), \text{mpk});
-\end{equation}
-
-\noindent
-this call must fail for invalid signatures.
-Thus, we have
-
-\begin{equation}
-    \text{Cost of Naive Group Proof} \sim 113000 + 5800n^{2}.
-\end{equation}
-
-\noindent
-For $n=20$, this corresponds to $2.4$M gas.
-This is more expensive than the previous version, but we can
-do better.
-
-The main cost comes from the finite field inversions, which require
-a call to \textsc{ModExp}.
-To fix this, we precompute these inverses and include them
-in the function call.
+To reduce the required gas cost, we precompute these
+multiplicative inverses and include them in the function call.
 At the beginning of the call, we check to make sure that the submitted
 inverses are valid; if they are valid, we proceed with the
 accusation, and if they are invalid, we stop.
 Everything else is the same as before;
 see Alg.~\ref{alg:grpsig_malicious} for the complete description.
-For each accusation, the main cost is $t+1$ \textsc{ECMul} calls
-as well as one pairing check.
-Now, these same computations must be included for the initial
-check of a valid group signature, but we will ignore that for now.
-Thus, we have the cost to prove malicious action for one participant:
+For each accusation, the main cost is $t+1$ \textsc{ECMul} calls,
+$t$ \textsc{ECAdd} calls,
+and one pairing check.
+Therefore, we see
 
 \begin{equation}
-    \text{Cost of Efficient Group Proof} \sim 113000 + 4000n.
+    \text{Cost to Form and Verify Group Signature} \sim 113000 + 4100n.
 \end{equation}
 
 \noindent
-For $n=20$, this corresponds to $200$K gas.
-This is more efficient than computing $\gpk_{j}^{*}$ via smart contract.
+For $n=20$, this corresponds to $195$K gas.
 
-Due to the costs, validators would always prefer to use the group
-method over submitting all of the sent messages.
-Even so, submitting all messages will always work, while in the group
-setting we require a Byzantine-fault tolerant set of honest
-validators.
+In order to allow for a valid comparison between the two methods,
+we must realize that any proof of malicious behavior involving
+group signatures must require an \emph{additional} group signature
+construction of a valid group signature.
+As we can see from Table~\ref{tab:grpsig_accusation_cost},
+which accusation method is more efficient depends upon
+the number of malicious actors as well as the total validator set.
+
+It is important that the total number of validators be limited
+so that the accusation logic does not become too large.
+It is \emph{critical} that the accusation transaction
+be easily formed and executed in Ethereum in order to ensure
+a quick response to malicious behavior.
+
+By requiring the submission of a valid signature using $\gpk_{j}$
+as the public key, the corresponding private key must be known.
+This ensures that the it is possible to sign partial groups signatures.
+If a malicious actor submits an invalid $\gpk_{j}$,
+this does \emph{not} affect the ability of the rest of the validators
+to form a valid group signature.
+It would, though, require the byzantine fault-tolerant majority
+to move proceed.
+
+\input{tables/accusation_comparison.tex}
 
 \input{algs/gpkj_algs.tex}
 

@@ -21,11 +21,8 @@
 
 \numberwithin{equation}{section}
 
-\newcommand{\norm}[1]{\left| \left| #1 \right| \right|}		
-\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
 \newcommand{\angles}[1]{\left\langle #1 \right\rangle}
 \newcommand{\abs}[1]{\left| #1 \right|}
-\newcommand{\opernorm}[1]{\left|\left|\left| #1 \right| \right| \right|}
 
 \newcommand{\parens}[1]{\left( #1 \right)}
 \newcommand{\brackets}[1]{\left[ #1 \right]}	
@@ -34,14 +31,6 @@
 \newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
 \newcommand{\lprline}[1]{\left. #1 \right|}
 
-\DeclareMathOperator{\sgn}{sgn}
-\DeclareMathOperator{\sign}{sign}
-\DeclareMathOperator{\tr}{tr}
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\Span}{Span}
-\DeclareMathOperator{\diag}{diag}
-\DeclareMathOperator{\supp}{supp}
-\DeclareMathOperator{\Ker}{Ker}
 \DeclareMathOperator{\dlog}{dlog}
 
 \DeclareMathOperator{\Enc}{Enc}
@@ -61,13 +50,6 @@
 \newcommand{\G}[0]{\mathbb{G}}
 \newcommand{\V}[0]{\mathbb{V}}
 \renewcommand{\P}[0]{\mathbb{P}} % Overwrites Paragraph symbol
-\newcommand{\RP}[0]{\mathbb{RP}}
-\newcommand{\pdl}[3]{\left.\frac{\partial #1}{\partial #2} \right|_{#3}}
-\newcommand{\dfl}[2]{\left. d #1 \right|_{#2}}
-\newcommand{\csu}[3]{\Gamma_{#1 #2}^{#3}}
-\newcommand{\csl}[3]{\Gamma_{#1 #2 #3}}
-\newcommand{\Ric}[0]{\textrm{Ric}\,}
-\newcommand{\id}[0]{\textrm{id}}
 
 \newcommand{\sk}[0]{\textrm{sk}}
 \newcommand{\pk}[0]{\textrm{pk}}
@@ -193,3 +175,21 @@
    morestring=[s]{`}{`},%
 }
 
+% Specific commands for specialized objects
+
+% Elliptic Curves
+\newcommand*{\secp}[0]{{\normalfont\textsc{secp256k1}}}
+\newcommand*{\bnEth}[0]{{\normalfont\textsc{BN256Eth}}}
+
+% Application Objects
+\newcommand*{\utxo}[0]{{\normalfont\textsc{utxo}}}
+\newcommand*{\TxIn}[0]{{\normalfont\textsc{TxIn}}}
+\newcommand*{\DataStore}[0]{{\normalfont\textsc{DataStore}}}
+\newcommand*{\AtomicSwap}[0]{{\normalfont\textsc{AtomicSwap}}}
+\newcommand*{\ValueStore}[0]{{\normalfont\textsc{ValueStore}}}
+\newcommand*{\TxFee}[0]{{\normalfont\textsc{TxFee}}}
+\newcommand*{\Vin}[0]{{\normalfont\textsc{Vin}}}
+\newcommand*{\Vout}[0]{{\normalfont\textsc{Vout}}}
+\newcommand*{\Tx}[0]{{\normalfont\textsc{Tx}}}
+
+% Consensus Objects

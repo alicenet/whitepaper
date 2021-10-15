@@ -6,7 +6,7 @@
 
 \subsection{Definitions}
 
-\begin{labeling}{BlockHash}
+\begin{description}
 \item [Validator] A validator is a node that has placed a stake in the
     Ethereum staking smart contract, successfully negotiated a group key,
     and is actively participating in block creation on MadNetwork.
@@ -29,20 +29,20 @@
 \item [SigGroup] This is the aggregated signature formed by a threshold
     number of SigShares.
 \item [Signature] Signatures are validator signatures under the
-    secp256k1 curve using the Ethereum compliant recoverable ECDSA algorithm.
-\end{labeling}
+    \secp{} curve using the Ethereum compliant recoverable ECDSA algorithm.
+\end{description}
 
 
 \subsection{Cryptography}
 
 We use Elliptic Curve Cryptography within our system.
-Specifically, we use the curves Secp256k1 and BN256-Eth.
-Secp256k1 is the same elliptic curve used by Bitcoin and Ethereum
+Specifically, we use the curves \secp{} and \bnEth{}.
+\secp{} is the same elliptic curve used by Bitcoin and Ethereum
 for their public key cryptography.
-BN256-Eth is the pairing-friendly elliptic curve from the Ethereum
+\bnEth{} is the pairing-friendly elliptic curve from the Ethereum
 blockchain which is convenient for constructing group signatures.
 All validators are required to have an Ethereum account and so they
-have a Secp256k1 public key.
+have a \secp{} public key.
 During the distributed key generation process, a master public key (a
 public key for the entire group) is constructed and split amongst the
 participants.
@@ -451,7 +451,7 @@ round.
 The NextRound object is issued at the last phase of a round by any
 validator that does not have knowledge of consensus for the next block.
 This object contains two signatures.
-The first signature is a secp256k1 signature of the NRClaims object.
+The first signature is a \secp{} signature of the NRClaims object.
 The second signature is a BLS signature under the group share of the
 validator threshold cryptosystem.
 This second signature signs the RClaims object of the NRClaims object.
@@ -472,10 +472,10 @@ operation.
 The object carries proof of this knowledge by appending the PreCommit
 signatures into the message.
 The NextHeight message carries two signatures.
-The first signature is a signature under secp256k1 ECDSA.
+The first signature is a signature under \secp{} ECDSA.
 The second signature is a signature under the threshold BLS key of the
 validator group.
-The secp256k1 key signs the canonical hash of the NHClaims objects.
+The \secp{} key signs the canonical hash of the NHClaims objects.
 The BLS signature is a signature of the BClaims object.
 In this way, once a threshold number of NextHeight messages are formed,
 two objects may be created.
@@ -537,7 +537,7 @@ transition may be proven.
 This is not possible unless greater than two thirds of the validators
 collude to violate the rules of consensus.
 In the event that this does occur, the guilty validators may be
-identified through the Ethereum compliant secp256k1 ECDSA signatures
+identified through the Ethereum compliant \secp{} ECDSA signatures
 used to sign every consensus message type.
 If no accusations are formed and proven within the epoch boundary, the
 snapshot becomes canonical.
@@ -1389,7 +1389,7 @@ Write the message to the database and return.
 \subsection{Mining Rewards}
 
 Mining rewards take two forms at this time.
-First, a validator is rewarded for cleaning up stale DataStore objects
+First, a validator is rewarded for cleaning up stale \DataStore{} objects
 from the chain.
 Second, a validator is paid a base reward in tokens for performing the
 function of being a validator.
