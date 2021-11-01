@@ -29,13 +29,13 @@ uptime.
 
 A transaction is composed of two top level fields.
 These top level fields are vectors of objects.
-The first vector, Vin, contains a vector of TxIn objects.
+The first vector, Vin, contains a vector of \TxIn{} objects.
 The second vector, Vout, contains a vector of UTXO objects.
 A UTXO object must contain only one element from the mutually exclusive set of
 allowed UTXO types.
 These vectors are limited to 256 elements each and a transaction is limited to
 a total of 3 megabytes max.
-TxIn objects and UTXOs will be more fully covered in the following sections.
+\TxIn{} objects and UTXOs will be more fully covered in the following sections.
 
 The operation of concern at the Transaction Object level is the mechanism by
 which a transaction hash may be formed.
@@ -62,7 +62,7 @@ transaction malleability attacks found in early versions of the Bitcoin
 Protocol.
 In order to provide more clarity around transaction hashing, the operation, in
 detail, follows.
-This example will utilize the TxIn object seen in the diagram above and speak
+This example will utilize the \TxIn{} object seen in the diagram above and speak
 about UTXO objects in a generalized manner.
 
 Before an explanation of the mechanics of TxHashing may be explained two
@@ -95,8 +95,8 @@ The pseudoUTXOID, for a given UTXO, may be formed as follows:
 \end{align*}
 
 The operational explanation of TxHash formation may now begin.
-Each TxIn object is composed of three layers.
-The first layer is the TxIn object itself.
+Each \TxIn{} object is composed of three layers.
+The first layer is the \TxIn{} object itself.
 The first layer carries two fields.
 The first field is the TXInLinker and the second field is the signature
 of the canonical encoding of the TXInLinker.
@@ -115,8 +115,8 @@ and outputs to be hashed concurrently.
 Each of these hashes is then inserted into a Compact Sparse Merkle Trie
 at a location defined by the type of object.
 The resulting CSMT root hash is the TxHash.
-For TxIn objects, this location is the UTXOID of the consumed UTXO and
-the value is the hash of the TxIn PreImage.
+For \TxIn{} objects, this location is the UTXOID of the consumed UTXO and
+the value is the hash of the \TxIn{} PreImage.
 For TxOut objects, the location is the pseudoUTXOID and the value is
 the hash of the object PreImage.
 Because a TxHash is not available to form the proper UTXOID of the
@@ -169,26 +169,26 @@ atomicity may be preserved with more complex handling of transaction
 fees as an edge case.
 
 
-\subsection{The TxIn Object}
+\subsection{The \TxIn{} Object}
 
 \input{figures/txin_object.tex}
 
-A TxIn object allows a UTXO to be consumed by specifying the TxHash of
+A \TxIn{} object allows a UTXO to be consumed by specifying the TxHash of
 the Transaction in which the UTXO was formed and the index at which the
 UTXO was created in the Vout vector.
-All TxIn objects must be signed in order to prove possession of the
+All \TxIn{} objects must be signed in order to prove possession of the
 private key generated during object creation.
 MadNetwork allows several pending transactions to reference the same
 UTXO for consumption at a time through the utilization of an LRU-based
 reference counting system.
-A TxIn may not reference a UTXO created in the same transaction or
+A \TxIn{} may not reference a UTXO created in the same transaction or
 block.
 As previously covered, this may be changed in future versions to allow
 the edge case of mining fees.
-All TxIn objects must point to either a known UTXO or a valid unspent
+All \TxIn{} objects must point to either a known UTXO or a valid unspent
 deposit from Ethereum.
 
-In addition to consumption of MadNetwork UTXO objects, the TxIn object
+In addition to consumption of MadNetwork UTXO objects, the \TxIn{} object
 may also cause the consumption of a Deposit from the Ethereum
 blockchain.
 Deposits into the sidechain may be triggered by any token holder on the
@@ -209,9 +209,9 @@ This action causes an event to be emitted that is observed by the
 miners of the sidechain.
 Once this deposit has matured for at least 10 blocks, it will become
 available for use in the sidechain.
-The deposit may be consumed by referencing the deposit in a TxIn object.
+The deposit may be consumed by referencing the deposit in a \TxIn{} object.
 This reference may be formed by setting the consumedTxIdx field of the
-TxIn object to the max value of uint32, setting the txHash to the big
+\TxIn{} object to the max value of uint32, setting the txHash to the big
 endian uint256 equivalent of the counter at the time of the deposit,
 and signing with the same private key as was used to create the public
 key hash specified in the deposit contract invocation.
@@ -223,32 +223,32 @@ perform any acknowledgment operations of a deposit having been spent
 against the deposit smart contract.
 
 
-\subsection{The DataStore Object}
+\subsection{The \DataStore{} Object}
 
 \input{figures/data_store_object.tex}
 
-A DataStore object is a type of UTXO.
+A \DataStore{} object is a type of UTXO.
 This is the fundamental mechanism by which data may be stored in MadNetwork.
 Rather than storing data in an account-based relationship, we selected
 the use of a UTXO-based storage system to allow for a more traditional
 atomic commitment mechanism as is readily available in database
 technologies in general.
-This capability allows a single transaction to consume many DataStore
+This capability allows a single transaction to consume many \DataStore{}
 objects and rewrite these objects in an atomic manner.
-A DataStore is bound to a single epoch, where an epoch is a bounded
+A \DataStore{} is bound to a single epoch, where an epoch is a bounded
 division of blocks in MadNetwork.
 These divisions are deterministic and based on simple modulo operations.
 The full specification of an epoch will be handled later in this paper.
-Any transaction containing a DataStore must be included in the named
+Any transaction containing a \DataStore{} must be included in the named
 epoch of generation.
 This constraint is manifest through the rent-based data storage
 mechanisms employed by MadNet.
 In addition to the actual data being stored, the deposit, the chainID,
-the output index, the epoch of issuance, and the owner, each DataStore contains
+the output index, the epoch of issuance, and the owner, each \DataStore{} contains
 an index.
 The index allows a datastore to be referenced as a named element in the
 virtual namespace defined by the hash of the public key of the
-DataStore signer.
+\DataStore{} signer.
 This index is built through a reference system in the database behind
 the application, and this reference system enforces uniqueness of an
 index in a given namespace.
@@ -257,14 +257,15 @@ There also exists an index that allows all objects in a namespace to be
 traversed in $O(n)$ and $O(\log n)$ search may be implemented in future
 versions of this system without impacting consensus.
 
-\subsection{The ValueStore Object}
+
+\subsection{The \ValueStore{} Object}
 
 \input{figures/value_store_object.tex}
 
-A ValueStore allows for the conveyance of MadNetwork tokens between
+A \ValueStore{} allows for the conveyance of MadNetwork tokens between
 accounts in the MadNetwork and provides a mechanism for generating a
 change output from a transaction.
-The named owner is the only party that may consume a ValueStore object.
+The named owner is the only party that may consume a \ValueStore{} object.
 All value stores are also indexed according to the owner by default.
 This allows iteration of UTXO objects for the purpose of simplifying
 wallet software.
@@ -278,7 +279,7 @@ The inclusion of this index is intended to facilitate the minimization
 of UTXO dust, as it is named in the Bitcoin context.
 
 
-\subsection{The AtomicSwap Object}
+\subsection{The \AtomicSwap{} Object}
 
 \input{figures/atomic_swap_object.tex}
 
@@ -293,7 +294,7 @@ In this way the sidechain acts as a universal sink in the flow of
 tokens.
 
 The manner in which atomic swaps are facilitated is through the native
-AtomicSwap object.
+\AtomicSwap{} object.
 This object acts as a time-locked hash contract where time is measured
 in epoch boundaries.
 The safest manner in which to negotiate an atomic swap is for the
@@ -303,14 +304,14 @@ exist in the Ethereum EVM that orders may be matched against, and
 MadNet was intentionally not built for complex smart contract
 operations of this nature.
 
-At the time of creation, any value stored in the AtomicSwap is locked.
+At the time of creation, any value stored in the \AtomicSwap{} is locked.
 During the time between issuedAt and exp, the partner may claim the
-value stored in the AtomicSwap by revealing the preImage of the
+value stored in the \AtomicSwap{} by revealing the preImage of the
 hashlock.
-The only party that may claim an AtomicSwap before exp is the partner
+The only party that may claim an \AtomicSwap{} before exp is the partner
 and only with a proof of knowledge of the hashlock-preimage.
-If the AtomicSwap is not consumed before exp, any value stored in the
-AtomicSwap will revert to owner.
+If the \AtomicSwap{} is not consumed before exp, any value stored in the
+\AtomicSwap{} will revert to owner.
 Thus, only the partner or owner may consume this UTXO type.
 
 The operational flow is as follows.
@@ -322,33 +323,33 @@ Erin's public key that she will use in MadNetwork, and Erin has
 Mike's Account he will use in Ethereum.
 
 First, Mike will form a Transaction that transfers the required value
-into an AtomicSwap object on the MadNetwork and sets the partner value
+into an \AtomicSwap{} object on the MadNetwork and sets the partner value
 to the hash of Erin's public key.
 Mike will set the exp at least three Epochs into the future, and Mike
 will hash a random value to act as the preimage of the hashlock.
 The random value Mike selects must be a 32 byte object.
-This constraint is enforced by the MadNetwork AtomicSwap object as well
-as by the Ethereum AtomicSwapContract.
+This constraint is enforced by the MadNetwork \AtomicSwap{} object as well
+as by the Ethereum \AtomicSwap{}Contract.
 This requirement is to prevent maliciously large values from being
 selected.
 
 Mike may then inform Erin of the transaction hash, or Erin may watch
 for a transaction with her public key hash.
 Once Erin observes the transaction, she may form an Ethereum
-transaction by calling the AtomicSwapContract in the EVM.
+transaction by calling the \AtomicSwap{}Contract in the EVM.
 This contract should have the same hashlock as Mike's transaction and
 the expiration of this offer should be at least one Epoch shorter than
 the exp used in Mike's transaction.
 Note that if Mike chose an expiration that is less than three epochs
 into the future, Erin should abort the protocol and not form the offer
-in the AtomicSwapContract.
+in the \AtomicSwap{}Contract.
 A failure to observe this requirement may result in the loss of assets
 due to a race condition.
 Specifically, Mike could wait until immediately prior to expiration of
-the AtomicSwapContract object to reveal the hashlock.
-If both the AtomicSwap object and the AtomicSwapContract expire at the
+the \AtomicSwap{}Contract object to reveal the hashlock.
+If both the \AtomicSwap{} object and the \AtomicSwap{}Contract expire at the
 same time, there are no guarantees Erin would be able to submit a
-transaction before the expiration of the AtomicSwap object.
+transaction before the expiration of the \AtomicSwap{} object.
 This would allow Mike to recover Erin's funds without Erin recovering
 anything from Mike.
 
@@ -360,25 +361,28 @@ In this transaction Mike must reveal the preimage of his hashlock in
 order to claim the funds.
 Once Erin observes this transaction she will know the hashlock preimage.
 Given the hashlock preimage Erin may claim her value in the MadNetwork
-by forming a transaction that spends the AtomicSwap object.
+by forming a transaction that spends the \AtomicSwap{} object.
 
-In the event that Mike creates the AtomicSwap object and Erin does not
-reciprocate or forms the AtomicSwapContract with incorrect parameters,
-Mike may recover his funds after the AtomicSwap object has expired.
-Similarly, if Mike forms the AtomicSwap object with incorrect
-parameters or never claims the funds from the AtomicSwapContract, Erin
-may recover her funds after the expiration of the AtomicSwapContract.
+In the event that Mike creates the \AtomicSwap{} object and Erin does not
+reciprocate or forms the \AtomicSwap{}Contract with incorrect parameters,
+Mike may recover his funds after the \AtomicSwap{} object has expired.
+Similarly, if Mike forms the \AtomicSwap{} object with incorrect
+parameters or never claims the funds from the \AtomicSwap{}Contract, Erin
+may recover her funds after the expiration of the \AtomicSwap{}Contract.
+
+
+\subsection{The \TxFee{} Object}
 
 
 \subsection{Account Abstraction}
 
 Transaction signing in MadNetwork may take several forms and the
 signature itself may be generated under two allowed Elliptic Curves.
-The first curve that may be utilized is Secp256k1.
-Every Secp256k1 signature must be an Ethereum-compliant ECDSA signature.
-The second curve is the BN256 Elliptic Curve as specified in the
+The first curve that may be utilized is \secp{}.
+Every \secp{} signature must be an Ethereum-compliant ECDSA signature.
+The second curve is the \bnEth{} Elliptic Curve as specified in the
 Ethereum Yellow Paper.
-All BN256 signatures must sign transactions using BLS with the defined
+All \bnEth{} signatures must sign transactions using BLS with the defined
 hash to curve operations as seen in the technical addendum.
 These BLS signatures require the public key of the signer to be
 concatenated with the value being hashed.
@@ -407,12 +411,12 @@ key that generated the signature matches the owner field from byte one
 to end using zero index counting.
 This algorithm is the required algorithm for all value store objects at
 this time, and may use either BLS or ECDSA type signatures.
-This operation is only allowed for the ValueStore objects at this time.
+This operation is only allowed for the \ValueStore{} objects at this time.
 
 The second form is a hashed timelock signature verification algorithm.
 This signature verification algorithm is only allowed to be used with
 ECDSA at this time and this signature type is only allowed to be used
-with the AtomicSwap object at this time.
+with the \AtomicSwap{} object at this time.
 In this signature verification algorithm, the hashlock preimage must
 prepend the signature.
 
@@ -428,11 +432,11 @@ prepended to the signature.
 The ECDSA implementation used is the Ethereum compliant recoverable
 ECDSA, so the public key is not required to be prepended.
 This signature verification mechanism is the only type allowed for
-DataStore objects at this time and this mechanism may only be used with
-DataStore objects.
+\DataStore{} objects at this time and this mechanism may only be used with
+\DataStore{} objects.
 The reason for requiring this mechanism is to allow the proof of
 possession of the signing key at the time the object is constructed.
-This is required due to the namespaced indexing that DataStore objects
+This is required due to the namespaced indexing that \DataStore{} objects
 enforce.
 For instance, Bob may not write into the namespace of Alice without
 knowledge of the private key of Alice.

@@ -32,8 +32,8 @@ system whereby $t+1$ actors are required to work together to
 sign messages for the group.
 Here, $t$ and $n$ are preassigned.
 In our case, we specifically desire a Byzantine-fault tolerant
-thresholded system, whereby we require $t = \ceil{2n/3}-1$.
-Even though we have the same $t$ values for $n = 3k$ and $n = 3k-1$
+thresholded system, whereby we require $t = \floor{2n/3}$.
+Even though we have the same $t$ values for $n = 3k$ and $n = 3k+1$
 (thereby potentially allowing one malicious validator to be
 ejected without forcing a required restart),
 we will restart the DKG process whenever malicious behavior

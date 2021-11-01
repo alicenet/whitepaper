@@ -27,7 +27,7 @@ The official protocol name Brontide uses is
 \noindent
 Here, the \texttt{Noise\_XK} handshake specifies the initiator knows the
 responders static public key, so it is never transmitted.
-The additional requirements include the elliptic curve secp256k1, the
+The additional requirements include the elliptic curve \secp{}, the
 AEAD method based on the ChaCha20 symmetric cipher and Poly1305
 authenticator, and the cryptographic hash function SHA256.
 We selected this type of protocol to ensure that a peer was protected

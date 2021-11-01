@@ -59,14 +59,14 @@ Let this exit require a proof of state against the snapshot and only be
 valid for the most recent snapshot of MadNetwork.
 
 Before Bob places a deposit, let Alice and Bob coordinate to create a
-DataStore in MadNetwork that holds a single 32 byte value.
+\DataStore{} in MadNetwork that holds a single 32 byte value.
 Let this value be the balance of Alice’s deposit in the Ethereum
 smart contract.
 Once this datastore has been constructed, let Bob place his deposit
 into the smart contract.
 Each time Alice and Bob wish to exchange value let Alice and Bob
 coordinate to sign a new transaction that overwrites the previous
-DataStore with a new value.
+\DataStore{} with a new value.
 This operation should not occur in any epoch until at least fifteen
 blocks have been recorded in the Ethereum blockchain since the last
 snapshot.
@@ -74,7 +74,7 @@ This delay is to ensure the window of generating a valid exit proof for
 the smart contract is fully terminated before a new round of exchange
 may begin.
 
-Let the value of the DataStore be the new balance of Alice after a
+Let the value of the \DataStore{} be the new balance of Alice after a
 mutually agreed upon exchange of value.
 What governs such exchange is beyond the scope of this example.
 Let us simply say that they agree to exchange value based on
@@ -84,22 +84,22 @@ to a transaction that is written to the sidechain.
 Thus, the value is mutually agreed upon.
 
 If at any point either party wishes to terminate the channel, the party
-may stop signing additional changes to the DataStore.
-At the termination of an epoch, the data of this DataStore may be
+may stop signing additional changes to the \DataStore{}.
+At the termination of an epoch, the data of this \DataStore{} may be
 proven in the Ethereum Blockchain in a compact manner using the
 parameters of the most recent snapshot.
-The proof of existence for the DataStore UTXO is just a Merkle Proof of
+The proof of existence for the \DataStore{} UTXO is just a Merkle Proof of
 Inclusion against the StateRoot of the snapshot block.
-The parsing logic of the DataStore is fairly trivial assuming the
-RawData field of the DataStore is a fixed size object.
+The parsing logic of the \DataStore{} is fairly trivial assuming the
+RawData field of the \DataStore{} is a fixed size object.
 This assumption will allow fixed offset parsing of the canonical
-encoding of the DataStore object.
+encoding of the \DataStore{} object.
 
 Once the existence of a UTXO is proven against a snapshot, the public
 key of the signer must be proven as equal to the 2 out of 2 BLS public
 key as stored in the smart contract.
 Assuming economic security of the sidechain is sufficient, the BLS
-signature of the DataStore need not be verified in the smart contract
+signature of the \DataStore{} need not be verified in the smart contract
 since this requirement is enforced in the sidechain validation logic.
 If this assumption is insufficient, our system is capable of validating
 a BLS signature in an Ethereum smart contract for less than 200K gas.

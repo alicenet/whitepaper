@@ -1,0 +1,28 @@
+\begin{table}[t]
+\centering
+\begin{tabular}{|c||c|c||c|c||c|c|}
+\hline
+& \multicolumn{6}{|c|}{Group Accusation Gas Cost} \\
+\hline
+\hline
+$m$ & \multicolumn{2}{|c||}{$n = 10$} & \multicolumn{2}{|c||}{$n = 20$} &
+    \multicolumn{2}{|c|}{$n = 30$} \\
+\hline
+    1 &  162K & 308K &  224K &  390K &  299K &  472K \\
+    2 &  323K & 462K &  448K &  585K &  599K &  708K \\
+    3 &  485K & 616K &  671K &  780K &  898K &  994K \\
+    4 &  647K &      &  895K &  975K & 1.20M & 1.18M \\
+    5 &  808K &      & 1.12M & 1.17M & 1.50M & 1.42M \\
+    6 &  970K &      & 1.34M & 1.36M & 1.80M & 1.65M \\
+    7 & 1.13M &      & 1.57M &       & 2.10M & 1.89M \\
+\hline
+\end{tabular}
+\caption[Gas Cost for Invalid Signature]{
+    Here we list the gas cost for performing group accusation
+    for both the standard and group signature method.
+    As we can see, which method is more efficient depends both on
+    the total validator set ($n$) as well as the number of malicious
+    validators ($m$).
+    }
+\label{tab:grpsig_accusation_cost}
+\end{table}
