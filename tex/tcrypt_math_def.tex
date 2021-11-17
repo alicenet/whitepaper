@@ -19,8 +19,8 @@ All of the validators will be required to have an Ethereum
 public key.
 The DKG algorithm requires us to index the participants
 from $1$ to $n$.
-To do so, we order the participants with respect to their sorted
-Ethereum public keys.
+To do so, we order the participants with respect to their
+order of registration.
 Our algorithm will need an open broadcast channel;
 this will take place via smart contracts on the Ethereum
 network.
@@ -43,9 +43,8 @@ will need to check the equivalent
 \end{equation}
 
 \noindent
-If $h^{\alpha} = \parens{x,y}$, then
-$\parens{h^{\alpha}}^{-1} = \parens{x,-y}$; this holds for all
-elliptic curves.
+If $h = \parens{x,y}$, then $h^{-1} = \parens{x,-y}$;
+this holds for elliptic curves in Weierstrass form.
 For ease of notation, we set $\bar{h} = h^{-1}$.
 It may be convenient to store both $h_{2}$ and $\bar{h}_{2}$.
 

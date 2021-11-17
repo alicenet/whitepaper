@@ -1,4 +1,4 @@
-\subsection{Comparision with Ethereum Distributed Key Generation Paper}
+\subsection{Comparison with Ethereum Distributed Key Generation Paper}
 \label{ssec:ethdkg_comparison}
 
 In~\cite{ethdkg}, the authors presented the Ethereum
@@ -8,7 +8,7 @@ Here, participants work together to form a master public key
 based on verifiable secret sharing.
 The master secret key (the private key for the group)
 is the summation of the shared secrets correctly shared by
-valiadators.
+validators.
 This system may proceed even with a limited number of Byzantine actors.
 In the end, participants may compute partial signatures of a message
 which may be combined to form a valid group signature.
@@ -22,20 +22,22 @@ compliance with the consensus algorithm as well as punish
 those who behave in a cryptographically-verifiable malicious way.
 Malicious behavior include submitting false keys, submitting
 false proofs, signing invalid messages, and similar actions.
-This is different from the original paper where everything
-happened on Ethereum and participants who
+This is different from~\cite{ethdkg} where everything
+happened within Ethereum and participants who
 acted maliciously during the key derivation stage would still
 be allowed to proceed because honest actors would be able to
 work together to derive the correct information.
-In that setting, the focus was having a $\parens{t,n}$-thresholded
+In their setting, the focus was having a $\parens{t,n}$-threshold
 system whereby $t+1$ actors are required to work together to
 sign messages for the group.
-Here, $t$ and $n$ are preassigned.
 In our case, we specifically desire a Byzantine-fault tolerant
 thresholded system, whereby we require $t = \floor{2n/3}$.
+Although we will limit the maximum number of participants
+as well as require $n\ge4$, the value of $n$ is not determined
+until registration is closed.
 Even though we have the same $t$ values for $n = 3k$ and $n = 3k+1$
 (thereby potentially allowing one malicious validator to be
-ejected without forcing a required restart),
+ejected without forcing a protocol restart),
 we will restart the DKG process whenever malicious behavior
 is cryptographically proven.
 By forcing a restart upon pernicious action,
@@ -43,8 +45,8 @@ validators are discouraged from malicious activity as well
 as lose the opportunity to earn block rewards.
 We also restart when validators fail to submit the required
 information.
-In this case when malicious intent cannot be proven due to
-the possiblity of technical failure, a minor fine will be
+In the case when malicious intent cannot be proven due to
+the possibility of technical failure, a minor fine will be
 given due to time cost of the other participants.
 
 During the DKG process, all of the material necessary
@@ -71,7 +73,7 @@ we would like for honest validators to be immune to
 the previously-mentioned behavior even if there is only
 one honest participant.
 To combat this, we will require all messages to be signed
-by a participant's Ethereum's private key.
+by a participant's Ethereum private key.
 This will allow all messages to be validated against the Ethereum
 public key and will be safe so long as the Ethereum private key
 is secure.

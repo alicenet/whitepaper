@@ -25,11 +25,10 @@
 \newcommand{\abs}[1]{\left| #1 \right|}
 
 \newcommand{\parens}[1]{\left( #1 \right)}
-\newcommand{\brackets}[1]{\left[ #1 \right]}	
+\newcommand{\brackets}[1]{\left[ #1 \right]}
 \newcommand{\braces}[1]{\left\{ #1 \right\}}
 \newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
 \newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
-\newcommand{\lprline}[1]{\left. #1 \right|}
 
 \DeclareMathOperator{\dlog}{dlog}
 
@@ -176,6 +175,16 @@
 }
 
 % Specific commands for specialized objects
+
+% DKG Phases
+\newcommand*{\Registration}[0]{Registration Phase}
+\newcommand*{\ShareDistribution}[0]{Share Distribution Phase}
+\newcommand*{\ShareDistributionDispute}[0]{Share Distribution Dispute Phase}
+\newcommand*{\KeyShare}[0]{Key Share Submission Phase}
+\newcommand*{\MasterPublicKey}[0]{Master Public Key Submission Phase}
+\newcommand*{\GPKSubmission}[0]{Group Public Key Submission Phase}
+\newcommand*{\GPKDispute}[0]{Group Public Key Dispute Phase}
+\newcommand*{\Completion}[0]{DKG Completion Phase}
 
 % Elliptic Curves
 \newcommand*{\secp}[0]{{\normalfont\textsc{secp256k1}}}

@@ -4,14 +4,15 @@
 We desire a Byzantine Fault Tolerant consensus algorithm.
 So, we let $\mathcal{P}$ be the total collection of participants with
 $\abs{\mathcal{P}} = n$.
-We set the threshold $t = \ceil{2n/3} - 1$ in our $\parens{t,n}$
+We set the threshold $t = \floor{2n/3}$ in our $\parens{t,n}$
 secret sharing protocol.
 Thus, it takes $t+1$ users to reconstruct a secret, which corresponds
 to strictly greater than two-thirds of the participants.
 We assume there is an open broadcast channel between all participants.
-Encryption will be provided through Diffie-Hellman style shared
-secret encryption; this will be discussed in Sec.~\ref{ssec:secret_enc}.
-The group shared secret, henceforth called the \emph{master secret key},
+Encryption will be provided through Diffie-Hellman-style shared
+secret encryption; this will be discussed at the end of
+Sec.~\ref{sssec:share_distribution}.
+The group's shared secret, henceforth called the \emph{master secret key},
 will be the sum of the shared secrets of
 each group member who correctly shared his secret.
 Once there are $t+1$ valid partial signatures, these will be
@@ -25,14 +26,62 @@ in our multiplicative notation), we will primarily
 use computations in $\G_{1}$ and anything required
 in $\G_{2}$ will be confirmed via a \textsc{PairingCheck} call.
 
-\subsubsection{Participant Setup}
+\subsubsection*{Protocol Overview}
+
+We briefly give an overview of the DKG protocol.
+Here are the different phases of the protocol:
+
+\begin{enumerate}
+\item \textbf{\Registration{}:}
+    Participants submit a public key
+    which will allow for secure communication on an open channel.
+\item \textbf{\ShareDistribution{}:}
+    Secret shares are distributed
+    through verifiable secret sharing;
+    these shares allow for the construction of the master public key.
+\item \textbf{\ShareDistributionDispute{}:}
+    If there are any invalid shares,
+    accusations can be made against malicious validators.
+\item \textbf{\KeyShare{}:}
+    Portions of the master public key and accompanying
+    proofs are submitted.
+\item \textbf{\MasterPublicKey{}:}
+    Any participant is able to construct and submit
+    the master public key.
+\item \textbf{\GPKSubmission{}:}
+    Group public keys are submitted.
+\item \textbf{\GPKDispute{}:}
+    Accusations are made against those who submitted invalid
+    group public keys.
+\item \textbf{\Completion{}:}
+    Any participant is able to signal the successful completion
+    of the DKG protocol.
+    This is required for MadNet to proceed.
+\end{enumerate}
+
+
+
+\subsubsection{\Registration{}}
 Each participant $P_{i}\in\mathcal{P}$ begins by selecting
 a secret key $\sk_{i}\in\Z_{q}$ with public key $\pk_{i} = g_{1}^{\sk_{i}}$.
 The public-private key pair $\angles{\pk_{i},\sk_{i}}$ will be
 used for secure communication over the insecure broadcast channel;
 it will not be used for signing any messages.
+The public key $\pk_{i}$ will be submitted during registration.
 
-\subsubsection{Verifiable Secret Sharing}
+
+
+\subsubsection{\ShareDistribution{}}
+\label{sssec:share_distribution}
+The primary purpose of this phase is to correctly share secrets
+between validators.
+These shared secret will then be used to establish a master secret key.
+By distributing the appropriate shares,
+each participant will be able to construct a portion
+of the key to create group signatures.
+This is done via Verifiable Secret Sharing
+and is based on a distributed version of
+Shamir's Secret Sharing~\cite{shamir1979share}.
 
 Participant $P_{i}$ chooses a secret
 $s_{i}\in\Z_{q}$ to share with the other participants.
@@ -69,8 +118,8 @@ and
 \end{equation}
 
 \noindent
-refers to a particular encryption scheme we discuss
-in Sec.~\ref{ssec:secret_enc}.
+refers to a particular encryption scheme discussed
+at the end of this \hyperref[par:secret_enc]{section}.
 Participant $P_{i}$ will broadcast the message
 
 \begin{equation}
@@ -87,6 +136,9 @@ Participant $P_{i}$ will broadcast the message
 
 \noindent
 over the broadcast channel.
+In our setting, this information will be submitted to the
+Ethereum smart contract and
+all participants will receive notification.
 We note this message does not include the secret
 $\overline{\texttt{s}}_{i\to i}$.
 
@@ -110,12 +162,44 @@ $P_{j}$ then determines if
 If we have equality, then $\hat{s}_{i\to j} = s_{i\to j}$.
 Otherwise, $P_{i}$ incorrectly shared his secret.
 
+\paragraph{Shared Secret Encryption}
+\label{par:secret_enc}
+
+As mentioned above, the shared secret from
+$P_{i}$ to $P_{j}$ is $s_{i\to j} = f_{i}(j)$.
+To encrypt this, we need to compute their shared secret:
+
+\begin{equation}
+    k_{ij} = \pk_{i}^{\sk_{j}} = \pk_{j}^{\sk_{i}} =
+    g_{1}^{\sk_{i}\sk_{j}}.
+\end{equation}
+
+\noindent
+Encryption and decryption are based on the idea of a one-time pad;
+in particular, we use outputs of cryptographic hashes of
+the $x$-coordinate of the shared secret along with the index
+of the participant receiving the message as our ``one-time pad''.
+This does not meet the technical definition of a one-time pad
+as it is usually defined (one standard reference is~\cite{hac1996}),
+but the idea is similar.
+By including the index of the intended recipient in the hash function,
+each symmetric encryption key is unique.
+See Alg.~\ref{alg:enc_dec} for details.
+
+\input{algs/encryption_and_decryption.tex}
 
 
-\subsubsection{Malicious shares}
 
-We now suppose that $\overline{\texttt{s}}_{i\to j}$ is incorrect;
-that is, we do not have equality in Eq.~\eqref{eq:secret_share_test}.
+\subsubsection{\ShareDistributionDispute{}}
+If we have $g_{1}^{\hat{s}_{i\to j}} = F_{i}(j)$
+in Eq.~\eqref{eq:secret_share_test} for all participants,
+then everyone correctly shared his secrets.
+In this case, there is nothing to dispute and the DKG protocol
+will proceed to the next phase.
+
+Instead, we now suppose that $\overline{\texttt{s}}_{i\to j}$ is incorrect;
+that is, $g_{1}^{\hat{s}_{i\to j}} \ne F_{i}(j)$
+in Eq.~\eqref{eq:secret_share_test} for some $i$ and $j$.
 In order to prove this to be the case, everyone needs to be
 able to prove that the encrypted secret
 $\overline{\texttt{s}}_{i\to j}$ is incorrect.
@@ -196,4 +280,399 @@ and proof $\pi(k_{ij}')$, and the smart contract would
 determine its validity and burn stake as appropriate.
 
 \input{algs/zk_dleq.tex}
+
+
+
+\subsubsection{\KeyShare{}}
+
+At this point, we know that every individual correctly shared his secret.
+Thus, we can now use this to submit the information required
+to build the master public key.
+
+Participant $P_{i}$'s secret $s_{i}$ is concealed behind
+their commitment $C_{i0} = g_{1}^{s_{i}}$.
+As discussed in~\cite{gennaro3revisiting,gennaro1999secure,ethdkg},
+in order to ensure that no bad actors gain any information
+about the master public key and are not be able to change
+its underlying probability distribution, we require
+$h_{1}\in\G_{1}$ such that $\dlog_{g_{1}}h_{1}$ is unknown.
+We also let $h_{2}\in\G_{2}$ be a generator.
+
+Let
+
+\begin{equation}
+    \pi(h_{1}^{s_{i}}) = \textsc{DLEQ}(
+        g_{1},g_{1}^{s_{i}},h_{1},h_{1}^{s_{i}},s_{i})
+\end{equation}
+
+\noindent
+be the zk-proof that $h_{1}^{s_{i}}$ is $P_{i}$'s portion
+of the master public key (technically part of $\text{mpk}^{*}$
+as defined below).
+Because $C_{i0} = g_{1}^{s_{i}}$ is public knowledge
+(stored in the smart contract)
+and $P_{i}$ correctly shared his secret $s_{i}$,
+the zk-proof will ensure the submitted value is valid.
+Additionally, $P_{i}$ will publish $h_{2}^{s_{i}}$ so that
+we can ensure
+
+\begin{equation}
+    \textsc{PairingCheck}(h_{1}^{s_{i}},\bar{h}_{2},h_{1},h_{2}^{s_{i}})
+        = \texttt{true}.
+\end{equation}
+
+\noindent
+This \textsc{PairingCheck} will be called by a smart contract.
+Thus, failure of $P_{i}$ to publish $h_{1}^{s_{i}}$,
+a valid proof $\pi(h_{1}^{s_{i}})$, and the corresponding
+$h_{2}^{s_{i}}$ amounts to misbehavior which will
+lead to a fine.
+In particular, $P_{i}$ will submit
+$\angles{h_{1}^{s_{i}}, \pi(h_{1}^{s_{i}}), h_{2}^{s_{i}}}$
+to the smart contract.
+The Ethereum smart contract will store $h_{1}^{s_{i}}$ from
+all participants and broadcast
+$h_{1}^{s_{i}}$, $\pi(h_{1}^{s_{i}})$, and $h_{2}^{s_{i}}$.
+
+If any participant does not correctly submit these value,
+then this entire process is required.
+
+
+
+\subsubsection{\MasterPublicKey{}}
+
+In this phase, a participant must submit the master public key.
+
+At this phase, all participants have correctly shared
+the secret share $s_{i}$ as well as $h_{1}^{s_{i}}$ and $h_{2}^{s_{i}}$.
+The individual shared secrets $s_{i}$ allow us to define the
+\emph{master secret key} $\text{msk}$:
+
+\begin{equation}
+    \text{msk} = \sum_{P_{i}\in\mathcal{P}} s_{i}.
+\end{equation}
+
+\noindent
+This gives us the \emph{master public key} $\text{mpk}$:
+
+\begin{align}
+    \text{mpk} &= h_{2}^{\text{msk}} \nonumber\\
+        &= \prod_{P_{i}\in\mathcal{P}} h_{2}^{s_{i}}.
+\end{align}
+
+\noindent
+A Byzantine-fault tolerant subgroup $\mathcal{R}\subseteq\mathcal{P}$ can
+correctly obtain the secret $s_{i}$ via Lagrange interpolation:
+
+\begin{align}
+    s_{i} &= \sum_{P_{j}\in\mathcal{R}} s_{i\to j} R_{j} \nonumber\\
+    R_{j} &= \prod_{\substack{P_{k}\in\mathcal{R} \\ k\ne j}} \frac{k}{k-j}.
+    \label{eq:Rj_coefs}
+\end{align}
+
+\noindent
+This would allow us to recover the secret $s_{i}$ should $P_{i}$
+fail to share $h_{1}^{s_{i}}$ below; however,
+we take a stricter response and would view failure to share
+as malicious activity leading to stake slashing.
+Furthermore, the DKG process must restart.
+We note that the Lagrange interpolation just described
+occurs in a finite field;
+this means that $R_{j}$ is constructed using finite field divisions.
+
+Because $h_{2}^{s_{i}}$ has been broadcast to all participants,
+anyone will be able to submit
+
+\begin{equation}
+    \text{mpk} = \prod_{P_{i}\in\mathcal{P}} h_{2}^{s_{i}}
+\end{equation}
+
+\noindent
+to the smart contract.
+Because $\braces{h_{1}^{s_{i}}}_{i\in\mathcal{P}}$ are stored
+and valid, the contract can construct
+
+\begin{equation}
+    \text{mpk}^{*} = \prod_{P_{i}\in\mathcal{P}} h_{1}^{s_{i}}
+    \label{eq:mpk_dual}
+\end{equation}
+
+\noindent
+and confirm its validity with a \textsc{PairingCheck}
+with the follow operation:
+
+\begin{equation}
+    \textsc{PairingCheck}(\text{mpk}^{*},\bar{h}_{2},h_{1},\text{mpk})
+        = \texttt{true}.
+\end{equation}
+
+\noindent
+The master public key can then be stored publicly and used
+for group signature verification.
+
+
+
+\subsubsection{\GPKSubmission{}}
+
+At this point, we have successfully constructed the master public
+key $\text{mpk}$ and distributed
+the master secret key $\text{msk}$ among the members of $\mathcal{P}$.
+We now turn our attention to constructing group
+signatures from partial signatures.
+
+Each participant $P_{j}\in\mathcal{P}$ has a portion of the
+master secret key; this portion is called the \emph{group secret key}
+$\gsk_{j}$:
+
+\begin{equation}
+    \gsk_{j} = \sum_{P_{i}\in\mathcal{P}} s_{i\to j}.
+\end{equation}
+
+\noindent
+This is possible because we proved that every participant
+in $\mathcal{P}$ correctly shared his secret share.
+We note that that $s_{j\to j}$ is included in the sum for
+$\gsk_{j}$ even though the encrypted form was not publicly shared.
+Naturally, there is the corresponding \emph{group public key}
+$\gpk_{j}$:
+
+\begin{equation}
+    \gpk_{j} = h_{2}^{\gsk_{j}}.
+\end{equation}
+
+\noindent
+Here, $\gpk_{j}$ is $P_{j}$'s portion of the master public key
+and will be broadcast to all users.
+Cryptographic proof that $\gpk_{j}$ is valid will be discussed
+in Sec.~\ref{app:gpkj_dispute}.
+
+Each participant must submit group public key $\gpk_{j}$
+and signature $\sigma_{j}$ for message $M$.
+This signature is computed by
+
+\begin{equation}
+    \sigma_{j} = \brackets{H_{2C}(M)}^{\gsk_{j}}
+\end{equation}
+
+\noindent
+with $\sigma_{j}\in\G_{1}$ and $M$ is a predetermined message to be signed.
+Here, $H_{2C}:\braces{0,1}^{*}\to\G_{1}$ is a hash-to-curve function.
+Hash-to-curve functions will be discussed in greater detail in
+Sec.~\ref{ssec:hash-to-curve}.
+
+During submission of $\angles{\gpk_{j},\sigma_{j}}$,
+we confirm that
+
+\begin{equation}
+    \textsc{PairingCheck}(\sigma_{j},\bar{h}_{2},H_{2C}(M),\gpk_{j})
+        = \texttt{true}.
+\end{equation}
+
+\noindent
+This is performed to ensure that the signature is valid.
+While this by itself does not ensure $\gpk_{j}$ is valid,
+it helps enable some $\gpk_{j}$ validation logic.
+
+
+
+\subsubsection{\GPKDispute{}}
+\label{app:gpkj_dispute}
+
+We now look at how to ensure the broadcast value of
+$\gpk_{j}$ is valid.
+
+Along with the $P_{j}$'s group public key $\gpk_{j}\in\G_{2}$,
+there is the corresponding dual version in $\G_{1}$:
+
+\begin{align}
+    \gpk_{j}^{*} &= g_{1}^{\gsk_{j}}
+            \nonumber\\
+        &= \prod_{P_{i}\in\mathcal{P}}F_{i}(j).
+    \label{eq:gpkj_star_def}
+\end{align}
+
+\noindent
+Note the base is $g_{1}$ and not $h_{1}$ as in the case of $\text{mpk}^{*}$
+in Eq.~\eqref{eq:mpk_dual}.
+Here, we remember that
+
+\begin{equation}
+    F_{i}(j) = C_{i0}C_{i1}^{j}C_{i2}^{j^{2}}\cdots C_{it}^{j^{t}}.
+    \label{eq:Fij_def}
+\end{equation}
+
+\noindent
+This shows that $\gpk_{j}^{*}$ is public knowledge
+and can be used to determine validity;
+that is, we form $\gpk_{j}^{*}$ locally and the check that
+
+\begin{equation}
+    \textsc{PairingCheck}(\gpk_{j}^{*}, \bar{h}_{2}, g_{1}, \gpk_{j})
+        = \texttt{true}.
+\end{equation}
+
+\noindent
+If all $\gpk_{j}$ submissions are valid,
+then there is nothing to dispute and we can proceed to the next phase.
+Otherwise, some accusations must be made to prove malicious behavior.
+
+\paragraph{Gas Cost Discussion}
+The major costs will be calling the precompiled contracts
+\textsc{ECAdd}, \textsc{ECMul}, \textsc{PairingCheck},
+and \textsc{ModExp} (modular exponentiation);
+see Table~\ref{tab:evm_gas_cost} for the specific gas costs.
+Note that the cost for \textsc{PairingCheck} comes
+from our assumption that we are testing 2 pairings,
+while the cost for \textsc{ModExp} comes from the fact
+that all of our arguments are 256-bit (32-byte) unsigned integers.
+These costs come from EIP-198\footnote{
+    \url{https://github.com/ethereum/EIPs/blob/master/EIPS/eip-198.md}}
+and EIP-1108\footnote{
+    \url{https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1108.md}}.
+
+\input{tables/evm_cost.tex}
+
+
+
+
+\paragraph{GPK Standard Accusation}
+The standard accusation is when we submit the necessary information
+to compute $\gpk_{j}^{*}$ to a smart contract and then show
+that the submission fails the pairing check.
+
+Using Eqs.~\eqref{eq:gpkj_star_def} and \eqref{eq:Fij_def},
+we see
+
+\begin{align}
+    \gpk_{j}^{*} &= \prod_{P_{i}\in\mathcal{P}}F_{i}(j)
+            \nonumber\\
+        &= \prod_{P_{i}\in\mathcal{P}} \brackets{\prod_{k=0}^{t} C_{ik}^{j^{k}}}
+            \nonumber\\
+        &= \prod_{k=0}^{t}
+            \brackets{\prod_{P_{i}\in\mathcal{P}} C_{ik}}^{j^{k}}
+    \label{eq:gpkj_rearrange}
+\end{align}
+
+\noindent
+With this rearrangement, we see that inside the brackets we must perform
+$t$ additions; this is followed by one multiplication.
+This set of operations is performed $t+1$ times.
+To combine these results also requires $t$ more additions.
+In all, we have $t^{2} + 2t$ \textsc{ECAdd} operations,
+$t+1$ \textsc{ECMul} operations,
+and 1 \textsc{PairingCheck} operation.
+Given that $t \sim \frac{2}{3}n$, we have
+
+\begin{equation}
+    \text{Cost of Standard Proof} \sim 113000 + 4200n + 67n^{2}.
+\end{equation}
+
+\noindent
+For $n=20$, this corresponds to $224$K gas;
+the gas limit is approximately 10M.
+
+
+
+\paragraph{GPK Group Accusation}
+The group accusation is when we form a group signature and
+show that using $P_{j}$'s submitted information results
+in an invalid signature.
+If we have a Byzantine fault-tolerant majority,
+this shows that $\gpk_{j}$ is invalid.
+
+To form a group signature, we must compute
+
+\begin{equation}
+    \sigma = \prod_{P_{j}\in\mathcal{R}} \sigma_{j}^{R_{j}},
+\end{equation}
+
+\noindent
+where $\mathcal{R}\subseteq\mathcal{P}$ is the set of participants
+who form a group signature.
+We must have $\abs{\mathcal{R}} = t+1$.
+From there, we verify the signature with the following operation:
+
+\begin{equation}
+    \textsc{PairingCheck}(\sigma, \bar{h}_{2}, H_{2C}(M), \text{mpk})
+        = \texttt{true}.
+\end{equation}
+
+\noindent
+Here, $M$ is publicly known and $\text{mpk}$ has already
+been verified.
+
+Each group signature $\sigma$ will require forming $R_{j}$
+and computing $\sigma_{j}^{R_{j}}$.
+After computing $R_{j}$, we require one \textsc{ECMul} call
+to compute $\sigma_{j}^{R_{j}}$.
+The expensive part turns out to be forming $R_{j}$,
+and we focus on its straightforward computation.
+We recall from Eq.~\eqref{eq:Rj_coefs} that
+
+\begin{equation}
+    R_{j} = \prod_{\substack{P_{k}\in\mathcal{R} \\ k\ne j}} \frac{k}{k-j}.
+\end{equation}
+
+\noindent
+Naively, we would need to compute $t$ finite field inversions,
+which corresponds to $t$ \textsc{ModExp} calls, to compute $R_{j}$;
+this must be performed $t+1$ times to form $\sigma$.
+This results in an expensive operation.
+
+To reduce the required gas cost, we precompute these
+multiplicative inverses and include them in the function call.
+At the beginning of the call, we check to make sure that the submitted
+inverses are valid; if they are valid, we proceed with the
+accusation, and if they are invalid, we stop.
+Everything else is the same as before;
+see Alg.~\ref{alg:grpsig_malicious} for the complete description.
+For each accusation, the main cost is $t+1$ \textsc{ECMul} calls,
+$t$ \textsc{ECAdd} calls,
+and one pairing check.
+Therefore, we see
+
+\begin{equation}
+    \text{Cost to Form and Verify Group Signature} \sim 113000 + 4100n.
+\end{equation}
+
+\noindent
+For $n=20$, this corresponds to $195$K gas.
+
+
+
+\paragraph{Accusation Discussion}
+In order to allow for a valid comparison between the two methods,
+we must realize that any proof of malicious behavior involving
+group signatures must require an \emph{additional} group signature
+construction to form a valid group signature.
+As we can see from Table~\ref{tab:grpsig_accusation_cost},
+the more efficient accusation method depends upon
+the number of malicious actors as well as the total validator set.
+
+It is important that the total number of validators be limited
+so that the accusation logic does not become too large.
+It is \emph{critical} that the accusation transaction
+be easily formed and executed in Ethereum in order to ensure
+a quick response to malicious behavior.
+
+If a malicious actor submits an invalid $\gpk_{j}$,
+this does \emph{not} affect the ability of the rest of the validators
+to form a valid group signature.
+It would, though, require the byzantine fault-tolerant majority
+to move proceed.
+
+\input{tables/accusation_comparison.tex}
+
+\input{algs/gpkj_algs.tex}
+
+
+
+\subsubsection{\Completion{}}
+
+At this point, the master public key is stored
+and the group public keys are correct.
+The DKG protocol is complete.
+
+In our case, we confirm that DKG has been completed in order
+for MadNet to proceed.
 
