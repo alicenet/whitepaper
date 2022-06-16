@@ -22,7 +22,7 @@
         $\sk$ is $j$'s secret key}
     \State $k = \pk^{\sk}$
     \Comment{k is the shared secret}
-    \State $\texttt{xK}  = \texttt{u2b}(k_{x})$
+    \State $\texttt{kX}  = \texttt{u2b}(k_{x})$
     \Comment{Convert $x$ coordinate of shared secret to bytes}
     \State $\texttt{j}   = \texttt{u2b}(j)$
     \State $\texttt{HKj} = H(\texttt{kX} || \texttt{j})$
