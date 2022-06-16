@@ -9,7 +9,7 @@
 \begin{description}
 \item [Validator] A validator is a node that has placed a stake in the
     Ethereum staking smart contract, successfully negotiated a group key,
-    and is actively participating in block creation on MadNetwork.
+    and is actively participating in block creation on \LayerTwoLong{}.
     Validators coordinate the generation of new blocks through a
     Byzantine Fault Tolerant consensus algorithm.
 \item [Height]
@@ -17,7 +17,7 @@
 \item [BlockHash] A cryptographic hash of the canonical encoding
     of the BClaims object.
 \item [ChainID] A unique uint32 value used to identify a particular
-    instantiation of the MadNetwork blockchain software.
+    instantiation of the \LayerTwoLong{} blockchain software.
 \item [Round] A round is defined by an iteration of the consensus
     protocol in which a single validator may be considered the leader.
     For each change of leader that occurs without a new block being
@@ -105,7 +105,7 @@ slave while sacrificing a small latency in network operation.
 
 \subsection{Protocol Overview}
 
-The MadNetwork consensus protocol is based on a modified form of
+The \LayerTwoLong{} consensus protocol is based on a modified form of
 Tendermint.
 In our implementation we utilize the PaceMaker concept of HotStuff in
 order to create stronger bounds on the mean time to consensus.
@@ -149,8 +149,8 @@ The full details of these attacks are not covered because they have
 been mitigated, but the basis for these attacks is apparent in the
 section describing validator stake withdrawal operations.
 
-The second system of time measurement is local blocks within the Mad
-Network itself.
+The second system of time measurement is local blocks within the
+\LayerTwoLong{} itself.
 Large groups of these blocks form Epochs.
 An epoch is defined for two purposes.
 First, it designates a boundary point for recording a snapshot of
@@ -570,7 +570,7 @@ provided by the Ethereum blockchain.
 \subsection{Virtual Votes}
 
 The concept of a virtual vote is integral to the security of the
-MadNetwork consensus algorithm.
+\LayerTwoLong{} consensus algorithm.
 We define a virtual vote as a vote that has been cast based on the
 indirect observation of cryptographically-secure evidence.
 Although the message passing protocol of the consensus algorithm may
@@ -787,7 +787,7 @@ may immediately return without performing any work.
 
 In order to give the reader insight as to what the structure of the
 previous statements look like in the actual implementation, the
-following code is provided from the source code of the MadNetwork
+following code is provided from the source code of the \LayerTwoLong{}
 repository; see Listing~\ref{list:dPP}.
 The intent of including this example code is to allow the reader to
 understand how the conditional structures have been implemented.
