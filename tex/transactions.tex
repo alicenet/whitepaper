@@ -27,19 +27,22 @@ uptime.
 
 \subsection{The Transaction Object}
 
-A transaction is composed of two top level fields.
-These top level fields are vectors of objects.
-The first vector, Vin, contains a vector of \TxIn{} objects.
-The second vector, Vout, contains a vector of UTXO objects.
+A transaction is composed of three top-level fields.
+The first two fields are vectors of objects.
+The first vector, \Vin{}, contains a vector of \TxIn{} objects.
+The second vector, \Vout{}, contains a vector of UTXO objects.
 A UTXO object must contain only one element from the mutually exclusive set of
 allowed UTXO types.
 These vectors are limited to 256 elements each and a transaction is limited to
 a total of 3 megabytes max.
 \TxIn{} objects and UTXOs will be more fully covered in the following sections.
+The final object is a \Fee{} object.
+This object holds the transaction fee.
 
 The operation of concern at the Transaction Object level is the mechanism by
 which a transaction hash may be formed.
-As may be seen above, every element of Vin and Vout contains a PreImage type as
+As may be seen above, every element of \Vin{} and \Vout{} contains
+a PreImage type as
 the last element in the object hierarchy.
 The PreImage objects define the protected parameters of a transaction.
 In order to ensure that the process of transaction signing is secure, each
@@ -50,7 +53,7 @@ The hashing of PreImage objects allows the formation of the TxHash value.
 The full details of this operation will follow shortly.
 
 Once a TxHash has been formed it may be injected into the appropriate layer of
-all Vin and Vout objects.
+all \Vin{} and \Vout{} objects.
 For all signed objects, the TxHash is injected into a Linker object.
 The canonical encoding of these Linker objects are what is signed for proof
 of possession of an identified public key as the owner of a UTXO.
@@ -72,7 +75,7 @@ Then the pseudoUTXOID shall be defined.
 
 A UTXO may be identified by its UTXOID.
 A UTXOID is created by hashing the concatenation of the TxHash that creates the
-UTXO and the Vout index at which the UTXO was created.
+UTXO and the \Vout{} index at which the UTXO was created.
 MadNetwork enforces the assumption that there may never be two UTXO objects
 that exist at the same time that are referenced by the same UTXOID.
 This requirement is observed through the use of the StateTrie, which is covered
@@ -108,7 +111,7 @@ The first field is the TXInPreImage and the second field is the TxHash.
 The third layer is the TXInPreImage.
 This object codifies the UTXO being consumed through inclusion of the
 ConsumedTxHash field and the ConsumedTxIdx field.
-This hierarchy is also constructed on the UTXO objects found in Vout.
+This hierarchy is also constructed on the UTXO objects found in \Vout{}.
 
 This topology allows for each PreImage layer of the transaction inputs
 and outputs to be hashed concurrently.
@@ -122,13 +125,17 @@ the hash of the object PreImage.
 Because a TxHash is not available to form the proper UTXOID of the
 object, a pseudoUTXOID is used instead.
 
-Once the TxHash is computed, each object from Vin and Vout has the
+Once the TxHash is computed, each object from \Vin{} and \Vout{} has the
 TxHash injected and all objects that must be signed are signed after
 this injection.
 This provides the means to immutably link a signature to a TxHash.
 
+% TODO: continue to update and clean up this section
 Unlike in Bitcoin, the sum of a Transaction’s input values must be
-equal to the sum of a Transactions output values.
+equal to the sum of a Transactions output values plus fees.
+Each object may have an individual fee associated with it;
+these much be matched exactly.
+As noted previously, there is also the overall fee of the transaction.
 At this time, transaction fees are paid through the cleanup of stale
 state.
 Thus no direct mechanism to pay transaction fees is provided except
@@ -175,7 +182,7 @@ fees as an edge case.
 
 A \TxIn{} object allows a UTXO to be consumed by specifying the TxHash of
 the Transaction in which the UTXO was formed and the index at which the
-UTXO was created in the Vout vector.
+UTXO was created in the \Vout{} vector.
 All \TxIn{} objects must be signed in order to prove possession of the
 private key generated during object creation.
 MadNetwork allows several pending transactions to reference the same
@@ -369,9 +376,6 @@ Mike may recover his funds after the \AtomicSwap{} object has expired.
 Similarly, if Mike forms the \AtomicSwap{} object with incorrect
 parameters or never claims the funds from the \AtomicSwap{}Contract, Erin
 may recover her funds after the expiration of the \AtomicSwap{}Contract.
-
-
-\subsection{The \TxFee{} Object}
 
 
 \subsection{Account Abstraction}
