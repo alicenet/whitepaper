@@ -3,17 +3,17 @@
 
 \input{figures/trans_obj_prim.tex}
 
-MadNetwork operates on a UTXO model that has many similarities to the
+\LayerTwoLong{} operates on a UTXO model that has many similarities to the
 Bitcoin blockchain.
 The divergence from the Bitcoin system is based on an attempt to
 simplify the rules surrounding transaction validation.
-Rather than integrate a scripting language, MadNetwork uses object
+Rather than integrate a scripting language, \LayerTwoLong{} uses object
 specific validation logic.
 What this allows is a more efficient verification algorithm of pending
 transactions as well as more granular proofs with respect to blockchain
 state.
 
-In the MadNetwork system, version numbers are not required at the
+In the \LayerTwoLong{} system, version numbers are not required at the
 transaction level.
 In the event that additional functionality is desired, new objects may
 be created to accommodate such changes and the validation of such
@@ -76,7 +76,7 @@ Then the pseudoUTXOID shall be defined.
 A UTXO may be identified by its UTXOID.
 A UTXOID is created by hashing the concatenation of the TxHash that creates the
 UTXO and the \Vout{} index at which the UTXO was created.
-MadNetwork enforces the assumption that there may never be two UTXO objects
+\LayerTwoLong{} enforces the assumption that there may never be two UTXO objects
 that exist at the same time that are referenced by the same UTXOID.
 This requirement is observed through the use of the StateTrie, which is covered
 more thoroughly in other sections of this paper.
@@ -185,7 +185,7 @@ the Transaction in which the UTXO was formed and the index at which the
 UTXO was created in the \Vout{} vector.
 All \TxIn{} objects must be signed in order to prove possession of the
 private key generated during object creation.
-MadNetwork allows several pending transactions to reference the same
+\LayerTwoLong{} allows several pending transactions to reference the same
 UTXO for consumption at a time through the utilization of an LRU-based
 reference counting system.
 A \TxIn{} may not reference a UTXO created in the same transaction or
@@ -195,7 +195,7 @@ the edge case of mining fees.
 All \TxIn{} objects must point to either a known UTXO or a valid unspent
 deposit from Ethereum.
 
-In addition to consumption of MadNetwork UTXO objects, the \TxIn{} object
+In addition to consumption of \LayerTwoLong{} UTXO objects, the \TxIn{} object
 may also cause the consumption of a Deposit from the Ethereum
 blockchain.
 Deposits into the sidechain may be triggered by any token holder on the
@@ -235,7 +235,8 @@ against the deposit smart contract.
 \input{figures/data_store_object.tex}
 
 A \DataStore{} object is a type of UTXO.
-This is the fundamental mechanism by which data may be stored in MadNetwork.
+This is the fundamental mechanism by which data may be stored in
+\LayerTwoLong{}.
 Rather than storing data in an account-based relationship, we selected
 the use of a UTXO-based storage system to allow for a more traditional
 atomic commitment mechanism as is readily available in database
@@ -243,13 +244,13 @@ technologies in general.
 This capability allows a single transaction to consume many \DataStore{}
 objects and rewrite these objects in an atomic manner.
 A \DataStore{} is bound to a single epoch, where an epoch is a bounded
-division of blocks in MadNetwork.
+division of blocks in \LayerTwoLong{}.
 These divisions are deterministic and based on simple modulo operations.
 The full specification of an epoch will be handled later in this paper.
 Any transaction containing a \DataStore{} must be included in the named
 epoch of generation.
 This constraint is manifest through the rent-based data storage
-mechanisms employed by MadNet.
+mechanisms employed by \LayerTwo{}.
 In addition to the actual data being stored, the deposit, the chainID,
 the output index, the epoch of issuance, and the owner, each \DataStore{} contains
 an index.
@@ -269,8 +270,8 @@ versions of this system without impacting consensus.
 
 \input{figures/value_store_object.tex}
 
-A \ValueStore{} allows for the conveyance of MadNetwork tokens between
-accounts in the MadNetwork and provides a mechanism for generating a
+A \ValueStore{} allows for the conveyance of \LayerTwoLong{} tokens between
+accounts in the \LayerTwoLong{} and provides a mechanism for generating a
 change output from a transaction.
 The named owner is the only party that may consume a \ValueStore{} object.
 All value stores are also indexed according to the owner by default.
@@ -308,7 +309,7 @@ The safest manner in which to negotiate an atomic swap is for the
 sidechain party to be the initial actor.
 This pattern is also convenient because it allows an offer contract to
 exist in the Ethereum EVM that orders may be matched against, and
-MadNet was intentionally not built for complex smart contract
+\LayerTwo{} was intentionally not built for complex smart contract
 operations of this nature.
 
 At the time of creation, any value stored in the \AtomicSwap{} is locked.
@@ -322,20 +323,20 @@ If the \AtomicSwap{} is not consumed before exp, any value stored in the
 Thus, only the partner or owner may consume this UTXO type.
 
 The operational flow is as follows.
-For the purpose of this explanation Mike will hold MadNetwork Tokens in
-the MadNetwork itself and Erin will hold Ethereum in the EVM.
+For the purpose of this explanation Mike will hold \LayerTwoLong{} Tokens in
+the \LayerTwoLong{} itself and Erin will hold Ethereum in the EVM.
 The protocol may begin once Mike and Erin are aware of each other's
 desire to exchange, an exchange rate has been set, Mike has the hash of
-Erin's public key that she will use in MadNetwork, and Erin has
+Erin's public key that she will use in \LayerTwoLong{}, and Erin has
 Mike's Account he will use in Ethereum.
 
 First, Mike will form a Transaction that transfers the required value
-into an \AtomicSwap{} object on the MadNetwork and sets the partner value
+into an \AtomicSwap{} object on the \LayerTwoLong{} and sets the partner value
 to the hash of Erin's public key.
 Mike will set the exp at least three Epochs into the future, and Mike
 will hash a random value to act as the preimage of the hashlock.
 The random value Mike selects must be a 32 byte object.
-This constraint is enforced by the MadNetwork \AtomicSwap{} object as well
+This constraint is enforced by the \LayerTwoLong{} \AtomicSwap{} object as well
 as by the Ethereum \AtomicSwap{}Contract.
 This requirement is to prevent maliciously large values from being
 selected.
@@ -367,7 +368,7 @@ from the specified address that he previously claimed.
 In this transaction Mike must reveal the preimage of his hashlock in
 order to claim the funds.
 Once Erin observes this transaction she will know the hashlock preimage.
-Given the hashlock preimage Erin may claim her value in the MadNetwork
+Given the hashlock preimage Erin may claim her value in the \LayerTwoLong{}
 by forming a transaction that spends the \AtomicSwap{} object.
 
 In the event that Mike creates the \AtomicSwap{} object and Erin does not
@@ -380,7 +381,7 @@ may recover her funds after the expiration of the \AtomicSwap{}Contract.
 
 \subsection{Account Abstraction}
 
-Transaction signing in MadNetwork may take several forms and the
+Transaction signing in \LayerTwoLong{} may take several forms and the
 signature itself may be generated under two allowed Elliptic Curves.
 The first curve that may be utilized is \secp{}.
 Every \secp{} signature must be an Ethereum-compliant ECDSA signature.
