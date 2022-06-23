@@ -30,8 +30,8 @@ the system without any modification follows.
 State channels are a promising technology that suffer from a problem of
 requiring all participants to be online at all times.
 This problem may be addressed through a hybrid solution based on the
-construction of \LayerTwoLong{}.
-Given the existence of \LayerTwoLong{}, a state channel may be constructed
+construction of \LayerTwo{}.
+Given the existence of \LayerTwo{}, a state channel may be constructed
 using a negotiated BLS multisignature account as described in the
 account abstraction section.
 
@@ -43,7 +43,7 @@ Alice will be the first mover in this example, and so Alice will create
 a smart contract on Ethereum in which she writes the negotiated public
 key and deposits some value.
 Let this contract have knowledge of the snapshot contract for
-\LayerTwoLong{}.
+\LayerTwo{}.
 Let this smart contract have three exit conditions.
 The first exit should be an exit condition that allows Alice to remove
 the deposit if Bob does not also place an equal deposit as Alice by
@@ -54,12 +54,12 @@ Let these other two exit conditions be an exit initiated by Alice or an
 exit initiated by Bob.
 Let an exit by Alice or Bob only occur within ten Ethereum blocks of a
 snapshot being recorded to the Ethereum blockchain by the validators of
-\LayerTwoLong{}.
+\LayerTwo{}.
 Let this exit require a proof of state against the snapshot and only be
-valid for the most recent snapshot of \LayerTwoLong{}.
+valid for the most recent snapshot of \LayerTwo{}.
 
 Before Bob places a deposit, let Alice and Bob coordinate to create a
-\DataStore{} in \LayerTwoLong{} that holds a single 32 byte value.
+\DataStore{} in \LayerTwo{} that holds a single 32 byte value.
 Let this value be the balance of Alice’s deposit in the Ethereum
 smart contract.
 Once this datastore has been constructed, let Bob place his deposit
@@ -132,13 +132,13 @@ Namely, that the problems around state channel participant availability
 may be addressed by preventing an exit from a state both parties have
 not agreed to as the most recent state of the system.
 Other constructs may be devised for more complex cases.
-The fundamental idea is that \LayerTwoLong{} may act as an out-of-band
+The fundamental idea is that \LayerTwo{} may act as an out-of-band
 storage system that is cryptographically verifiable and allows proof of
 an item being the most recent object state.
 
 \subsection{AdLedger PKI}
 
-One application of \LayerTwoLong{} is Transparent by Design Public Key
+One application of \LayerTwo{} is Transparent by Design Public Key
 Infrastructure (TPKI).
 This is discussed more fully in its own whitepaper, but we summarize
 the main ideas here.
@@ -167,7 +167,7 @@ Root level certificates are not cross-validated (although they
 are self-signed) to ensure a well-defined notion of validity
 and revocation.
 Should a root certificate become compromised, a predetermined storage
-location in \LayerTwoLong{} will hold the revocation key.
+location in \LayerTwo{} will hold the revocation key.
 This revocation public key, if present, will show that all users
 should reject subordinate certificates from this root certificate.
 We envision there being multiple Certificate Authorities with separate
