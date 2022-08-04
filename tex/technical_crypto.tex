@@ -5,22 +5,25 @@ In this section we present in detail the specifics of the
 cryptography we will be using for \LayerTwo{}.
 At times we will be verbose in our algorithmic details
 and design choices to allow others to understand our decisions.
+Due to the technical nature, some knowledge of cryptography is assumed;
+these notes~\cite{notes-math-crypto} may be helpful
+to understand the material here.
 
 We will begin by comparing this work with the
 Ethereum Distributed Key Generation whitepaper~\cite{ethdkg}
-in Sec.~\ref{ssec:ethdkg_comparison};
+in App.~\ref{ssec:ethdkg_comparison};
 our design is based this paper.
 Some of the implementation-specific details are covered in
-Sec.~\ref{ssec:pk_curve_specifics}.
-In Sec.~\ref{ssec:math_def}, we discuss the mathematics
+App.~\ref{ssec:pk_curve_specifics}.
+In App.~\ref{ssec:math_def}, we discuss the mathematics
 related to pairing-based cryptography; this is integral to
 our work as it is required for our group signatures.
 We describe the distributed key generation protocol in
-Sec.~\ref{ssec:dkg}.
+App.~\ref{ssec:dkg}.
 Group signatures from pairing-based cryptography require
 a hash-to-curve function, and we talk about our construction
 based on~\cite{ft2012bnhashtocurve,boneh2019h2cBLS12}
-in Sec.~\ref{ssec:hash-to-curve}.
+in App.~\ref{ssec:hash-to-curve}.
 
 We follow~\cite{ethdkg} in our definition of
 $\parens{t,n}$-threshold system, where we need $t+1$ actors
