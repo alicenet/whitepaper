@@ -3,11 +3,23 @@ using Go = import "/go.capnp";
 $Go.package("capn");
 $Go.import("github.com/alicenet/alicenet/application/capn");
 
-const defaultDSPreImage :DSPreImage = (chainID = 0, index = 0x"00", issuedAt = 0, deposit = 0, rawData = 0x"00", owner = 0x"00", deposit1 = 0, deposit2 = 0, deposit3 = 0, deposit4 = 0, deposit5 = 0, deposit6 = 0, deposit7 = 0, fee0 = 0, fee1 = 0, fee2 = 0, fee3 = 0, fee4 = 0, fee5 = 0, fee6 = 0, fee7 = 0);
-const defaultDSLinker :DSLinker = (txHash = 0x"00", dSPreImage = .defaultDSPreImage);
-const defaultVSPreImage :VSPreImage = (chainID = 0, value = 0, owner = 0x"00", value1 = 0, value2 = 0, value3 = 0, value4 = 0, value5 = 0, value6 = 0, value7 = 0, fee0 = 0, fee1 = 0, fee2 = 0, fee3 = 0, fee4 = 0, fee5 = 0, fee6 = 0, fee7 = 0);
-const defaultTXInPreImage :TXInPreImage = (chainID = 0, consumedTxIdx = 0, consumedTxHash = 0x"00");
-const defaultTXInLinker :TXInLinker = (tXInPreImage = .defaultTXInPreImage, txHash = 0x"00");
+const defaultDSPreImage :DSPreImage = (
+    chainID = 0, index = 0x"00", issuedAt = 0, deposit = 0,
+    rawData = 0x"00", owner = 0x"00", deposit1 = 0, deposit2 = 0,
+    deposit3 = 0, deposit4 = 0, deposit5 = 0, deposit6 = 0,
+    deposit7 = 0, fee0 = 0, fee1 = 0, fee2 = 0, fee3 = 0, fee4 = 0,
+    fee5 = 0, fee6 = 0, fee7 = 0);
+const defaultDSLinker :DSLinker = (
+    txHash = 0x"00", dSPreImage = .defaultDSPreImage);
+const defaultVSPreImage :VSPreImage = (
+    chainID = 0, value = 0, owner = 0x"00", value1 = 0, value2 = 0,
+    value3 = 0, value4 = 0, value5 = 0, value6 = 0, value7 = 0,
+    fee0 = 0, fee1 = 0, fee2 = 0, fee3 = 0, fee4 = 0, fee5 = 0,
+    fee6 = 0, fee7 = 0);
+const defaultTXInPreImage :TXInPreImage = (
+    chainID = 0, consumedTxIdx = 0, consumedTxHash = 0x"00");
+const defaultTXInLinker :TXInLinker = (
+    tXInPreImage = .defaultTXInPreImage, txHash = 0x"00");
 
 struct DSPreImage {
     chainID @0 :UInt32 = 0;
